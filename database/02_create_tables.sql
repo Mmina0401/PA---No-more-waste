@@ -30,10 +30,8 @@ CREATE TABLE utilisateur (
     actif BOOLEAN DEFAULT TRUE,
 
     date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-
-    photo_profil VARCHAR(255),
-
-    dernier_acces DATETIME
+    
+    
 
 );
 

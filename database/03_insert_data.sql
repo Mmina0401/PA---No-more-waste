@@ -58,15 +58,15 @@ VALUES
 
 /*insertion des données dans la table adhesion*/
 INSERT INTO adhesion
-(id_utilisateur,date_adhesion,date_expiration,statut)
+(id_utilisateur,date_debut,date_fin,montant,statut)
 
 VALUES
-(2,'2026-01-01','2027-01-01','ACTIVE'),
-(3,'2026-02-15','2027-02-15','ACTIVE');
+(2,'2026-01-01','2027-01-01',10.00,'ACTIVE'),
+(3,'2026-02-15','2027-02-15',15.00,'ACTIVE');
 
 /*insertion dans la table stock*/
 INSERT INTO stock
-(id_produit,quantite,code_emplacement)
+(id_produit,quantite,emplacement)
 
 VALUES
 
