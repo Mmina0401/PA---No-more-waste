@@ -76,6 +76,4 @@ func RegisterRoutes() {
 
 	http.HandleFunc("/api/mouvements-stock/delete", handlers.DeleteMouvementStock)
 
-	http.HandleFunc("/api/pdf/collecte", handlers.GenerateCollectePDF)
-
 }
