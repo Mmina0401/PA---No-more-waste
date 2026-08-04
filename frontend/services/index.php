@@ -60,7 +60,7 @@ function badgeStatutService($statut) {
     <td><?= htmlspecialchars(substr($s["heure_debut"] ?? '', 0, 5)) ?> - <?= htmlspecialchars(substr($s["heure_fin"] ?? '', 0, 5)) ?></td>
     <td><?= htmlspecialchars($s["lieu"] ?? '—') ?></td>
     <td>
-        <?= (int) $s["nb_inscrits"] ?><?= isset($s["capacite_max"]) && $s["capacite_max"] !== null ? '/' . (int) $s["capacite_max"] : '' ?>
+        <?= (int) ($s["nb_inscrits"] ?? 0) ?><?= isset($s["capacite_max"]) && $s["capacite_max"] !== null ? '/' . (int) $s["capacite_max"] : '' ?>
     </td>
     <td><?= badgeStatutService($s["statut"]) ?></td>
     <td>
