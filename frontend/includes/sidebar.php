@@ -36,6 +36,18 @@ Collectes
 
 <li class="nav-item mb-2">
 
+<a class="nav-link text-white" href="../services/index.php">
+
+<i class="fa-solid fa-calendar-days"></i>
+
+Services
+
+</a>
+
+</li>
+
+<li class="nav-item mb-2">
+
 <a class="nav-link text-white" href="../stocks/index.php">
 
 <i class="fa-solid fa-box"></i>
