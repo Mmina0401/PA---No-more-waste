@@ -24,6 +24,18 @@ Dashboard
 
 <li class="nav-item mb-2">
 
+<a class="nav-link text-white" href="../commercants/index.php">
+
+<i class="fa-solid fa-shop"></i>
+
+Commerçants
+
+</a>
+
+</li>
+
+<li class="nav-item mb-2">
+
 <a class="nav-link text-white" href="../collectes/index.php">
 
 <i class="fa-solid fa-truck"></i>
