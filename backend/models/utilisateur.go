@@ -7,12 +7,17 @@ type Utilisateur struct {
 	Nom          string    `json:"nom"`
 	Prenom       string    `json:"prenom"`
 	Email        string    `json:"email"`
-	MotDePasse   string    `json:"mot_de_passe"`
-	Telephone    string    `json:"telephone"`
-	Adresse      string    `json:"adresse"`
-	Ville        string    `json:"ville"`
-	CodePostal   string    `json:"code_postal"`
+	MotDePasse   string    `json:"mot_de_passe,omitempty"`
+	Telephone    *string   `json:"telephone"`
+	Adresse      *string   `json:"adresse"`
+	Ville        *string   `json:"ville"`
+	CodePostal   *string   `json:"code_postal"`
 	Role         string    `json:"role"`
 	Actif        bool      `json:"actif"`
 	DateCreation time.Time `json:"date_creation"`
+
+	// Champs spécifiques aux commerçants (NULL pour les autres rôles)
+	RaisonSociale   *string `json:"raison_sociale"`
+	Siret           *string `json:"siret"`
+	SecteurActivite *string `json:"secteur_activite"`
 }

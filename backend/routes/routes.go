@@ -14,6 +14,14 @@ func RegisterRoutes() {
 
 	http.HandleFunc("/api/utilisateurs", handlers.GetUtilisateurs)
 
+	http.HandleFunc("/api/utilisateurs/get", handlers.GetUtilisateur)
+
+	http.HandleFunc("/api/utilisateurs/create", handlers.CreateUtilisateur)
+
+	http.HandleFunc("/api/utilisateurs/update", handlers.UpdateUtilisateur)
+
+	http.HandleFunc("/api/utilisateurs/delete", handlers.DeleteUtilisateur)
+
 	http.HandleFunc("/api/services", handlers.GetServices)
 
 	http.HandleFunc("/api/services/get", handlers.GetService)
