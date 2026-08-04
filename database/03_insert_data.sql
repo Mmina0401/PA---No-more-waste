@@ -12,7 +12,8 @@ VALUES
 
 /*insertion des données dans la table vehicule*/
 INSERT INTO vehicule
-(immatriculation,marque,modele,capacite_kg)
+/* Mmina : j'ai modifié capacite_kg en capacite */
+(immatriculation,marque,modele,capacite)
 VALUES
 ('AA-123-AA','Renault','Kangoo',700),
 ('BB-456-BB','Peugeot','Partner',800),
