@@ -1,6 +1,9 @@
 <?php
 session_start();
 
+require_once "../includes/auth.php";
+exigerRole("ADMIN", "RESPONSABLE");
+
 include "../includes/header.php";
 include "../includes/navbar.php";
 require_once "../includes/api.php";

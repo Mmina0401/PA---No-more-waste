@@ -4,102 +4,77 @@ import (
 	"net/http"
 
 	"github.com/MMina040/PA-No-More-Waste/handlers"
+	"github.com/MMina040/PA-No-More-Waste/middleware"
 )
 
+// Mmina :j'ai modifié en entier pour que chaque route de l'API vérifie que la personne est connectée (et, pour les actions de création/modification/suppression, qu'elle a le bon rôle) avant d'y répondre (sans rien supprimer des routes existantes)
 func RegisterRoutes() {
 
+	// ---------- Publique (pas besoin d'être connecté) ----------
 	http.HandleFunc("/api/test", handlers.TestHandler)
+	http.HandleFunc("/api/auth/login", handlers.Connexion)
 
-	http.HandleFunc("/api/adhesions", handlers.GetAdhesions)
+	// ---------- Utilisateurs / commerçants ----------
+	http.HandleFunc("/api/utilisateurs", middleware.VerifierConnexion(handlers.GetUtilisateurs))
+	http.HandleFunc("/api/utilisateurs/get", middleware.VerifierConnexion(handlers.GetUtilisateur))
+	http.HandleFunc("/api/utilisateurs/create", middleware.VerifierRole("ADMIN", "RESPONSABLE")(handlers.CreateUtilisateur))
+	http.HandleFunc("/api/utilisateurs/update", middleware.VerifierRole("ADMIN", "RESPONSABLE")(handlers.UpdateUtilisateur))
+	http.HandleFunc("/api/utilisateurs/delete", middleware.VerifierRole("ADMIN", "RESPONSABLE")(handlers.DeleteUtilisateur))
 
-	http.HandleFunc("/api/utilisateurs", handlers.GetUtilisateurs)
+	// ---------- Adhésions ----------
+	http.HandleFunc("/api/adhesions", middleware.VerifierConnexion(handlers.GetAdhesions))
+	http.HandleFunc("/api/adhesions/create", middleware.VerifierRole("ADMIN", "RESPONSABLE")(handlers.CreateAdhesion))
+	http.HandleFunc("/api/adhesions/update", middleware.VerifierRole("ADMIN", "RESPONSABLE")(handlers.UpdateAdhesion))
+	http.HandleFunc("/api/adhesions/delete", middleware.VerifierRole("ADMIN", "RESPONSABLE")(handlers.DeleteAdhesion))
 
-	http.HandleFunc("/api/utilisateurs/get", handlers.GetUtilisateur)
+	// ---------- Produits ----------
+	http.HandleFunc("/api/produits", middleware.VerifierConnexion(handlers.GetProduits))
+	http.HandleFunc("/api/produits/create", middleware.VerifierRole("ADMIN", "RESPONSABLE")(handlers.CreateProduit))
+	http.HandleFunc("/api/produits/update", middleware.VerifierRole("ADMIN", "RESPONSABLE")(handlers.UpdateProduit))
+	http.HandleFunc("/api/produits/delete", middleware.VerifierRole("ADMIN", "RESPONSABLE")(handlers.DeleteProduit))
 
-	http.HandleFunc("/api/utilisateurs/create", handlers.CreateUtilisateur)
+	// ---------- Catégories ----------
+	http.HandleFunc("/api/categories", middleware.VerifierConnexion(handlers.GetCategories))
+	http.HandleFunc("/api/categories/create", middleware.VerifierRole("ADMIN", "RESPONSABLE")(handlers.CreateCategorie))
+	http.HandleFunc("/api/categories/update", middleware.VerifierRole("ADMIN", "RESPONSABLE")(handlers.UpdateCategorie))
+	http.HandleFunc("/api/categories/delete", middleware.VerifierRole("ADMIN", "RESPONSABLE")(handlers.DeleteCategorie))
 
-	http.HandleFunc("/api/utilisateurs/update", handlers.UpdateUtilisateur)
+	// ---------- Collectes ----------
+	http.HandleFunc("/api/collectes", middleware.VerifierConnexion(handlers.GetCollectes))
+	http.HandleFunc("/api/collectes/create", middleware.VerifierRole("ADMIN", "RESPONSABLE")(handlers.CreateCollecte))
+	http.HandleFunc("/api/collectes/update", middleware.VerifierRole("ADMIN", "RESPONSABLE")(handlers.UpdateCollecte))
+	http.HandleFunc("/api/collectes/delete", middleware.VerifierRole("ADMIN", "RESPONSABLE")(handlers.DeleteCollecte))
 
-	http.HandleFunc("/api/utilisateurs/delete", handlers.DeleteUtilisateur)
+	http.HandleFunc("/api/detail_collectes", middleware.VerifierConnexion(handlers.GetDetailCollectes))
+	http.HandleFunc("/api/detail_collectes/create", middleware.VerifierRole("ADMIN", "RESPONSABLE")(handlers.CreateDetailCollecte))
+	http.HandleFunc("/api/detail-collectes/update", middleware.VerifierRole("ADMIN", "RESPONSABLE")(handlers.UpdateDetailCollecte))
+	http.HandleFunc("/api/detail-collectes/delete", middleware.VerifierRole("ADMIN", "RESPONSABLE")(handlers.DeleteDetailCollecte))
 
-	http.HandleFunc("/api/services", handlers.GetServices)
+	http.HandleFunc("/api/collecte_benevoles", middleware.VerifierConnexion(handlers.GetCollectesBenevoles))
+	http.HandleFunc("/api/collecte_benevoles/create", middleware.VerifierRole("ADMIN", "RESPONSABLE")(handlers.CreateCollecteBenevole))
+	http.HandleFunc("/api/collecte_benevoles/update", middleware.VerifierRole("ADMIN", "RESPONSABLE")(handlers.UpdateCollecteBenevole))
+	http.HandleFunc("/api/collecte_benevoles/delete", middleware.VerifierRole("ADMIN", "RESPONSABLE")(handlers.DeleteCollecteBenevole))
 
-	http.HandleFunc("/api/services/get", handlers.GetService)
+	// ---------- Stocks ----------
+	http.HandleFunc("/api/stocks", middleware.VerifierConnexion(handlers.GetStocks))
+	http.HandleFunc("/api/stocks/create", middleware.VerifierRole("ADMIN", "RESPONSABLE")(handlers.CreateStock))
+	http.HandleFunc("/api/stocks/update", middleware.VerifierRole("ADMIN", "RESPONSABLE")(handlers.UpdateStock))
+	http.HandleFunc("/api/stocks/delete", middleware.VerifierRole("ADMIN", "RESPONSABLE")(handlers.DeleteStock))
 
-	http.HandleFunc("/api/services/create", handlers.CreateService)
+	http.HandleFunc("/api/mouvements-stock", middleware.VerifierConnexion(handlers.GetMouvementsStock))
+	http.HandleFunc("/api/mouvements-stock/create", middleware.VerifierRole("ADMIN", "RESPONSABLE")(handlers.CreateMouvementStock))
+	http.HandleFunc("/api/mouvements-stock/update", middleware.VerifierRole("ADMIN", "RESPONSABLE")(handlers.UpdateMouvementStock))
+	http.HandleFunc("/api/mouvements-stock/delete", middleware.VerifierRole("ADMIN", "RESPONSABLE")(handlers.DeleteMouvementStock))
 
-	http.HandleFunc("/api/services/update", handlers.UpdateService)
+	// ---------- Services & inscriptions ----------
+	http.HandleFunc("/api/services", middleware.VerifierConnexion(handlers.GetServices))
+	http.HandleFunc("/api/services/get", middleware.VerifierConnexion(handlers.GetService))
+	http.HandleFunc("/api/services/create", middleware.VerifierRole("ADMIN", "RESPONSABLE")(handlers.CreateService))
+	http.HandleFunc("/api/services/update", middleware.VerifierRole("ADMIN", "RESPONSABLE")(handlers.UpdateService))
+	http.HandleFunc("/api/services/delete", middleware.VerifierRole("ADMIN", "RESPONSABLE")(handlers.DeleteService))
 
-	http.HandleFunc("/api/services/delete", handlers.DeleteService)
-
-	http.HandleFunc("/api/inscriptions", handlers.GetInscriptions)
-
-	http.HandleFunc("/api/inscriptions/create", handlers.CreateInscription)
-
-	http.HandleFunc("/api/inscriptions/update", handlers.UpdateInscription)
-
-	http.HandleFunc("/api/inscriptions/delete", handlers.DeleteInscription)
-
-	http.HandleFunc("/api/produits", handlers.GetProduits)
-
-	http.HandleFunc("/api/produits/create", handlers.CreateProduit)
-
-	http.HandleFunc("/api/produits/update", handlers.UpdateProduit)
-
-	http.HandleFunc("/api/produits/delete", handlers.DeleteProduit)
-
-	http.HandleFunc("/api/adhesions/create", handlers.CreateAdhesion)
-
-	http.HandleFunc("/api/adhesions/update", handlers.UpdateAdhesion)
-
-	http.HandleFunc("/api/adhesions/delete", handlers.DeleteAdhesion)
-
-	http.HandleFunc("/api/categories", handlers.GetCategories)
-
-	http.HandleFunc("/api/categories/create", handlers.CreateCategorie)
-
-	http.HandleFunc("/api/categories/update", handlers.UpdateCategorie)
-
-	http.HandleFunc("/api/categories/delete", handlers.DeleteCategorie)
-
-	http.HandleFunc("/api/collectes", handlers.GetCollectes)
-
-	http.HandleFunc("/api/collectes/create", handlers.CreateCollecte)
-
-	http.HandleFunc("/api/collectes/update", handlers.UpdateCollecte)
-
-	http.HandleFunc("/api/collectes/delete", handlers.DeleteCollecte)
-
-	http.HandleFunc("/api/detail_collectes", handlers.GetDetailCollectes)
-
-	http.HandleFunc("/api/detail_collectes/create", handlers.CreateDetailCollecte)
-
-	http.HandleFunc("/api/collecte_benevoles", handlers.GetCollectesBenevoles)
-
-	http.HandleFunc("/api/collecte_benevoles/create", handlers.CreateCollecteBenevole)
-
-	http.HandleFunc("/api/detail-collectes/update", handlers.UpdateDetailCollecte)
-
-	http.HandleFunc("/api/detail-collectes/delete", handlers.DeleteDetailCollecte)
-
-	http.HandleFunc("/api/collecte_benevoles/update", handlers.UpdateCollecteBenevole)
-
-	http.HandleFunc("/api/collecte_benevoles/delete", handlers.DeleteCollecteBenevole)
-
-	http.HandleFunc("/api/stocks", handlers.GetStocks)
-
-	http.HandleFunc("/api/stocks/create", handlers.CreateStock)
-
-	http.HandleFunc("/api/stocks/update", handlers.UpdateStock)
-
-	http.HandleFunc("/api/stocks/delete", handlers.DeleteStock)
-
-	http.HandleFunc("/api/mouvements-stock", handlers.GetMouvementsStock)
-
-	http.HandleFunc("/api/mouvements-stock/create", handlers.CreateMouvementStock)
-
-	http.HandleFunc("/api/mouvements-stock/update", handlers.UpdateMouvementStock)
-
-	http.HandleFunc("/api/mouvements-stock/delete", handlers.DeleteMouvementStock)
-
+	http.HandleFunc("/api/inscriptions", middleware.VerifierConnexion(handlers.GetInscriptions))
+	http.HandleFunc("/api/inscriptions/create", middleware.VerifierRole("ADMIN", "RESPONSABLE")(handlers.CreateInscription))
+	http.HandleFunc("/api/inscriptions/update", middleware.VerifierRole("ADMIN", "RESPONSABLE")(handlers.UpdateInscription))
+	http.HandleFunc("/api/inscriptions/delete", middleware.VerifierRole("ADMIN", "RESPONSABLE")(handlers.DeleteInscription))
 }

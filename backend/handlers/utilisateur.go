@@ -6,6 +6,7 @@ import (
 
 	"github.com/MMina040/PA-No-More-Waste/config"
 	"github.com/MMina040/PA-No-More-Waste/models"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // GetUtilisateurs renvoie la liste des utilisateurs.
@@ -118,6 +119,13 @@ func CreateUtilisateur(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Chiffrement du mot de passe avant stockage — jamais en clair en base.
+	hash, err := bcrypt.GenerateFromPassword([]byte(u.MotDePasse), bcrypt.DefaultCost)
+	if err != nil {
+		http.Error(w, "erreur lors du chiffrement du mot de passe", http.StatusInternalServerError)
+		return
+	}
+
 	result, err := config.DB.Exec(`
 		INSERT INTO utilisateur(
 			nom, prenom, email, mot_de_passe, telephone, adresse, ville, code_postal,
@@ -125,7 +133,7 @@ func CreateUtilisateur(w http.ResponseWriter, r *http.Request) {
 		)
 		VALUES(?,?,?,?,?,?,?,?,?,?,?,?)
 	`,
-		u.Nom, u.Prenom, u.Email, u.MotDePasse, u.Telephone, u.Adresse, u.Ville, u.CodePostal,
+		u.Nom, u.Prenom, u.Email, string(hash), u.Telephone, u.Adresse, u.Ville, u.CodePostal,
 		u.Role, u.RaisonSociale, u.Siret, u.SecteurActivite,
 	)
 
