@@ -8,8 +8,16 @@ include "../includes/header.php";
 include "../includes/navbar.php";
 require_once "../includes/api.php";
 
+if ($_SERVER["REQUEST_METHOD"] === "POST" && ($_POST["action"] ?? "") === "delete") {
+    API::post("/api/utilisateurs/delete", ["id_utilisateur" => (int) $_POST["id"]]);
+    header("Location: index.php");
+    exit;
+}
+
 $commercants = API::get("/api/utilisateurs?role=COMMERCANT");
 $adhesions   = API::get("/api/adhesions");
+if (!is_array($commercants)) $commercants = [];
+if (!is_array($adhesions))   $adhesions   = [];
 
 $statutParCommercant = [];
 foreach ($adhesions as $a) {
@@ -87,12 +95,11 @@ Modifier
 
 </a>
 
-<a href="#"
-class="btn btn-danger btn-sm">
-
-Supprimer
-
-</a>
+<form method="post" style="display:inline;" onsubmit="return confirm('Supprimer ce commerçant ?');">
+<input type="hidden" name="action" value="delete">
+<input type="hidden" name="id" value="<?= $c["id_utilisateur"] ?>">
+<button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
+</form>
 
 </td>
 

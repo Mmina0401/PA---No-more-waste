@@ -8,7 +8,8 @@ include "../includes/header.php";
 include "../includes/navbar.php";
 require_once "../includes/api.php";
 
-$id = $_GET["id"];
+$id = $_GET["id"] ?? null;
+if (!$id) { header("Location: index.php"); exit; }
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
@@ -26,6 +27,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
 $commercant = API::get("/api/utilisateurs/get?id=" . $id);
 $adhesions  = API::get("/api/adhesions?id_utilisateur=" . $id);
+if (!is_array($adhesions)) $adhesions = [];
 ?>
 
 <div class="container-fluid">
