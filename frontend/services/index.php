@@ -39,7 +39,7 @@ include "../includes/navbar.php";
 <h2>Services & Créneaux</h2>
 <hr>
 
-<a href="ajouter.php" class="btn btn-success mb-3">+ Nouveau Service</a>
+<a href="formulaire.php" class="btn btn-success mb-3">+ Nouveau Service</a>
 
 <?php if (empty($services)): ?>
     <div class="alert alert-light border">Aucun service programmé pour le moment.</div>
@@ -69,7 +69,7 @@ include "../includes/navbar.php";
     <td><?= badgeStatutService($s["statut"]) ?></td>
     <td>
         <a href="inscriptions.php?id=<?= $s["id_service"] ?>" class="btn btn-outline-success btn-sm">Inscriptions</a>
-        <a href="modifier.php?id=<?= $s["id_service"] ?>" class="btn btn-warning btn-sm">Modifier</a>
+        <a href="formulaire.php?id=<?= $s["id_service"] ?>" class="btn btn-warning btn-sm">Modifier</a>
         <form method="post" style="display:inline;" onsubmit="return confirm('Supprimer ce service ?');">
             <input type="hidden" name="action" value="delete">
             <input type="hidden" name="id" value="<?= $s["id_service"] ?>">

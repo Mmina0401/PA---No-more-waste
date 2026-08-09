@@ -3,11 +3,33 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/MMina040/PA-No-More-Waste/config"
-	"github.com/MMina040/PA-No-More-Waste/models"
 	"golang.org/x/crypto/bcrypt"
 )
+
+// Utilisateur représente n'importe quel compte (admin, responsable,
+// bénévole, commerçant, visiteur).
+type Utilisateur struct {
+	ID           int       `json:"id_utilisateur"`
+	Nom          string    `json:"nom"`
+	Prenom       string    `json:"prenom"`
+	Email        string    `json:"email"`
+	MotDePasse   string    `json:"mot_de_passe,omitempty"`
+	Telephone    *string   `json:"telephone"`
+	Adresse      *string   `json:"adresse"`
+	Ville        *string   `json:"ville"`
+	CodePostal   *string   `json:"code_postal"`
+	Role         string    `json:"role"`
+	Actif        bool      `json:"actif"`
+	DateCreation time.Time `json:"date_creation"`
+
+	// Champs spécifiques aux commerçants (NULL pour les autres rôles)
+	RaisonSociale   *string `json:"raison_sociale"`
+	Siret           *string `json:"siret"`
+	SecteurActivite *string `json:"secteur_activite"`
+}
 
 // GetUtilisateurs renvoie la liste des utilisateurs.
 // Filtre optionnel : /api/utilisateurs?role=COMMERCANT
@@ -37,10 +59,10 @@ func GetUtilisateurs(w http.ResponseWriter, r *http.Request) {
 	}
 	defer rows.Close()
 
-	var utilisateurs []models.Utilisateur
+	var utilisateurs []Utilisateur
 
 	for rows.Next() {
-		var u models.Utilisateur
+		var u Utilisateur
 
 		err := rows.Scan(
 			&u.ID, &u.Nom, &u.Prenom, &u.Email, &u.MotDePasse,
@@ -71,7 +93,7 @@ func GetUtilisateur(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var u models.Utilisateur
+	var u Utilisateur
 	err := config.DB.QueryRow(`
 		SELECT
 			id_utilisateur, nom, prenom, email, mot_de_passe,
@@ -104,7 +126,7 @@ func CreateUtilisateur(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var u models.Utilisateur
+	var u Utilisateur
 	if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -158,7 +180,7 @@ func UpdateUtilisateur(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var u models.Utilisateur
+	var u Utilisateur
 	if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

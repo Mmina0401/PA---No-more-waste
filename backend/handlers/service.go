@@ -5,8 +5,38 @@ import (
 	"net/http"
 
 	"github.com/MMina040/PA-No-More-Waste/config"
-	"github.com/MMina040/PA-No-More-Waste/models"
 )
+
+// Service correspond à une session concrète (ex: "Cuisine solidaire" le
+// 2026-08-01 de 9h à 12h). Il n'y a pas de table "créneau" séparée : la
+// date et les horaires sont directement sur la ligne de service.
+type Service struct {
+	IDService   int     `json:"id_service"`
+	Nom         string  `json:"nom"`
+	Description *string `json:"description"`
+	Lieu        *string `json:"lieu"`
+	DateService *string `json:"date_service"`
+	HeureDebut  *string `json:"heure_debut"`
+	HeureFin    *string `json:"heure_fin"`
+	CapaciteMax *int    `json:"capacite_max"`
+	Statut      string  `json:"statut"` // OUVERT | COMPLET | ANNULE
+
+	// Rempli uniquement par GetServices : nombre de personnes déjà inscrites
+	// (calculé, pas stocké en base) pour savoir combien de places restent.
+	NbInscrits int `json:"nb_inscrits,omitempty"`
+}
+
+// InscriptionService relie un utilisateur (bénévole, adhérent...) à un service.
+type InscriptionService struct {
+	IDService       int    `json:"id_service"`
+	IDUtilisateur   int    `json:"id_utilisateur"`
+	DateInscription string `json:"date_inscription,omitempty"`
+	Statut          string `json:"statut"` // INSCRIT | CONFIRME | ANNULE
+
+	// Renseignés uniquement par GetInscriptions (jointure), pour affichage.
+	NomUtilisateur    string `json:"nom,omitempty"`
+	PrenomUtilisateur string `json:"prenom,omitempty"`
+}
 
 func GetServices(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
@@ -26,9 +56,9 @@ func GetServices(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer rows.Close()
-	var services []models.Service
+	var services []Service
 	for rows.Next() {
-		var s models.Service
+		var s Service
 		if err := rows.Scan(
 			&s.IDService, &s.Nom, &s.Description, &s.Lieu, &s.DateService,
 			&s.HeureDebut, &s.HeureFin, &s.CapaciteMax, &s.Statut, &s.NbInscrits,
@@ -52,7 +82,7 @@ func GetService(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var s models.Service
+	var s Service
 	err := config.DB.QueryRow(`
 		SELECT id_service, nom, description, lieu, date_service,
 			   heure_debut, heure_fin, capacite_max, statut
@@ -78,7 +108,7 @@ func CreateService(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var s models.Service
+	var s Service
 	if err := json.NewDecoder(r.Body).Decode(&s); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -115,7 +145,7 @@ func UpdateService(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var s models.Service
+	var s Service
 	if err := json.NewDecoder(r.Body).Decode(&s); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -193,9 +223,9 @@ func GetInscriptions(w http.ResponseWriter, r *http.Request) {
 	}
 	defer rows.Close()
 
-	var inscriptions []models.InscriptionService
+	var inscriptions []InscriptionService
 	for rows.Next() {
-		var i models.InscriptionService
+		var i InscriptionService
 		if err := rows.Scan(
 			&i.IDService, &i.IDUtilisateur, &i.DateInscription, &i.Statut,
 			&i.NomUtilisateur, &i.PrenomUtilisateur,
@@ -220,7 +250,7 @@ func CreateInscription(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var i models.InscriptionService
+	var i InscriptionService
 	if err := json.NewDecoder(r.Body).Decode(&i); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -272,7 +302,7 @@ func UpdateInscription(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var i models.InscriptionService
+	var i InscriptionService
 	if err := json.NewDecoder(r.Body).Decode(&i); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -301,7 +331,7 @@ func DeleteInscription(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var i models.InscriptionService
+	var i InscriptionService
 	if err := json.NewDecoder(r.Body).Decode(&i); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

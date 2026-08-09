@@ -1,110 +1,33 @@
+<?php
+$elementsMenu = [
+    ["href" => "../dashboard.php",          "icone" => "fa-house",          "texte" => "Dashboard"],
+    ["href" => "../commercants/index.php",  "icone" => "fa-shop",           "texte" => "Commerçants"],
+    ["href" => "../candidatures/index.php", "icone" => "fa-user-plus",      "texte" => "Candidatures"],
+    ["href" => "../collectes/index.php",    "icone" => "fa-truck",          "texte" => "Collectes"],
+    ["href" => "../services/index.php",     "icone" => "fa-calendar-days",  "texte" => "Services"],
+    ["href" => "../stocks/index.php",       "icone" => "fa-box",            "texte" => "Stocks"],
+    ["href" => "../rappels/index.php",      "icone" => "fa-bell",           "texte" => "Rappels"],
+    ["href" => "../pdf",                    "icone" => "fa-file-pdf",       "texte" => "PDF"],
+];
+?>
+
 <div class="bg-dark text-white vh-100 p-3">
 
 <h4 class="mb-4">
-
 <i class="fa-solid fa-seedling"></i>
-
 Menu
-
 </h4>
 
 <ul class="nav flex-column">
 
+<?php foreach ($elementsMenu as $element): ?>
 <li class="nav-item mb-2">
-
-<a class="nav-link text-white" href="../dashboard.php">
-
-<i class="fa-solid fa-house"></i>
-
-Dashboard
-
+<a class="nav-link text-white" href="<?= $element["href"] ?>">
+<i class="fa-solid <?= $element["icone"] ?>"></i>
+<?= $element["texte"] ?>
 </a>
-
 </li>
-
-<li class="nav-item mb-2">
-
-<a class="nav-link text-white" href="../commercants/index.php">
-
-<i class="fa-solid fa-shop"></i>
-
-Commerçants
-
-</a>
-
-</li>
-
-<li class="nav-item mb-2">
-
-<a class="nav-link text-white" href="../candidatures/index.php">
-
-<i class="fa-solid fa-user-plus"></i>
-
-Candidatures
-
-</a>
-
-</li>
-
-<li class="nav-item mb-2">
-
-<a class="nav-link text-white" href="../collectes/index.php">
-
-<i class="fa-solid fa-truck"></i>
-
-Collectes
-
-</a>
-
-</li>
-
-<li class="nav-item mb-2">
-
-<a class="nav-link text-white" href="../services/index.php">
-
-<i class="fa-solid fa-calendar-days"></i>
-
-Services
-
-</a>
-
-</li>
-
-<li class="nav-item mb-2">
-
-<a class="nav-link text-white" href="../stocks/index.php">
-
-<i class="fa-solid fa-box"></i>
-
-Stocks
-
-</a>
-
-</li>
-
-<li class="nav-item mb-2">
-
-<a class="nav-link text-white" href="../rappels/index.php">
-
-<i class="fa-solid fa-bell"></i>
-
-Rappels
-
-</a>
-
-</li>
-
-<li class="nav-item mb-2">
-
-<a class="nav-link text-white" href="../pdf">
-
-<i class="fa-solid fa-file-pdf"></i>
-
-PDF
-
-</a>
-
-</li>
+<?php endforeach; ?>
 
 </ul>
 

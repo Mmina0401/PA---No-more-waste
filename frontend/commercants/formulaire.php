@@ -7,31 +7,41 @@ exigerRole("ADMIN", "RESPONSABLE");
 require_once "../includes/api.php";
 
 $id = $_GET["id"] ?? null;
-if (!$id) {
-    header("Location: index.php");
-    exit;
+$c = ["nom" => "", "prenom" => "", "email" => "", "ville" => "", "raison_sociale" => "", "siret" => "", "secteur_activite" => "", "actif" => true];
+
+if ($id) {
+    $c = API::get("/api/utilisateurs/get?id=" . $id);
+    if (!$c || isset($c["error"])) {
+        header("Location: index.php");
+        exit;
+    }
 }
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
-    API::post("/api/utilisateurs/update", [
-        "id_utilisateur"   => (int) $id,
+    $payload = [
         "nom"              => $_POST["nom"],
         "prenom"           => $_POST["prenom"],
         "email"            => $_POST["email"],
         "ville"            => $_POST["ville"],
         "role"             => "COMMERCANT",
-        "actif"            => isset($_POST["actif"]),
         "raison_sociale"   => $_POST["raison_sociale"],
         "siret"            => $_POST["siret"],
         "secteur_activite" => $_POST["secteur_activite"],
-    ]);
+    ];
+
+    if ($id) {
+        $payload["id_utilisateur"] = (int) $id;
+        $payload["actif"] = isset($_POST["actif"]);
+        API::post("/api/utilisateurs/update", $payload);
+    } else {
+        $payload["mot_de_passe"] = $_POST["mot_de_passe"];
+        API::post("/api/utilisateurs/create", $payload);
+    }
 
     header("Location: index.php");
     exit;
 }
-
-$c = API::get("/api/utilisateurs/get?id=" . $id);
 
 include "../includes/header.php";
 include "../includes/navbar.php";
@@ -47,7 +57,7 @@ include "../includes/navbar.php";
 
 <div class="col-md-10 p-4">
 
-<h2>Modifier le Commerçant</h2>
+<h2><?= $id ? "Modifier le Commerçant" : "Nouveau Commerçant" ?></h2>
 
 <hr>
 
@@ -74,20 +84,27 @@ value="<?= htmlspecialchars($c["secteur_activite"] ?? "") ?>">
 <div class="mb-3">
 <label class="form-label">Nom du contact</label>
 <input type="text" name="nom" class="form-control" required
-value="<?= htmlspecialchars($c["nom"]) ?>">
+value="<?= htmlspecialchars($c["nom"] ?? "") ?>">
 </div>
 
 <div class="mb-3">
 <label class="form-label">Prénom du contact</label>
 <input type="text" name="prenom" class="form-control" required
-value="<?= htmlspecialchars($c["prenom"]) ?>">
+value="<?= htmlspecialchars($c["prenom"] ?? "") ?>">
 </div>
 
 <div class="mb-3">
 <label class="form-label">Email</label>
 <input type="email" name="email" class="form-control" required
-value="<?= htmlspecialchars($c["email"]) ?>">
+value="<?= htmlspecialchars($c["email"] ?? "") ?>">
 </div>
+
+<?php if (!$id): ?>
+<div class="mb-3">
+<label class="form-label">Mot de passe</label>
+<input type="password" name="mot_de_passe" class="form-control" required>
+</div>
+<?php endif; ?>
 
 <div class="mb-3">
 <label class="form-label">Ville</label>
@@ -95,12 +112,14 @@ value="<?= htmlspecialchars($c["email"]) ?>">
 value="<?= htmlspecialchars($c["ville"] ?? "") ?>">
 </div>
 
+<?php if ($id): ?>
 <div class="mb-3 form-check">
 <input type="checkbox" name="actif" class="form-check-input" id="actif" <?= $c["actif"] ? "checked" : "" ?>>
 <label class="form-check-label" for="actif">Compte actif</label>
 </div>
+<?php endif; ?>
 
-<button type="submit" class="btn btn-success">Enregistrer</button>
+<button type="submit" class="btn btn-success"><?= $id ? "Enregistrer" : "Créer" ?></button>
 <a href="index.php" class="btn btn-secondary">Annuler</a>
 
 </form>

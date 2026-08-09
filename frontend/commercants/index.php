@@ -46,7 +46,7 @@ foreach ($adhesions as $a) {
 
 <hr>
 
-<a href="ajouter.php" class="btn btn-success mb-3">
+<a href="formulaire.php" class="btn btn-success mb-3">
 + Nouveau Commerçant
 </a>
 
@@ -92,7 +92,7 @@ Adhésions
 
 </a>
 
-<a href="modifier.php?id=<?= $c["id_utilisateur"] ?>"
+<a href="formulaire.php?id=<?= $c["id_utilisateur"] ?>"
 class="btn btn-warning btn-sm">
 
 Modifier
