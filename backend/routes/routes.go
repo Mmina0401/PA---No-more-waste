@@ -7,7 +7,8 @@ import (
 	"github.com/MMina040/PA-No-More-Waste/middleware"
 )
 
-// Mmina :j'ai modifié en entier pour que chaque route de l'API vérifie que la personne est connectée (et, pour les actions de création/modification/suppression, qu'elle a le bon rôle) avant d'y répondre (sans rien supprimer des routes existantes)
+// Mmina :j'ai modifié en entier pour que chaque route de l'API vérifie que la personne est connectée
+// (et, pour les actions de création/modification/suppression, qu'elle a le bon rôle) avant d'y répondre (sans rien supprimer des routes existantes)
 func RegisterRoutes() {
 
 	// ---------- Publique (pas besoin d'être connecté) ----------
@@ -26,6 +27,8 @@ func RegisterRoutes() {
 	http.HandleFunc("/api/adhesions/create", middleware.VerifierRole("ADMIN", "RESPONSABLE")(handlers.CreateAdhesion))
 	http.HandleFunc("/api/adhesions/update", middleware.VerifierRole("ADMIN", "RESPONSABLE")(handlers.UpdateAdhesion))
 	http.HandleFunc("/api/adhesions/delete", middleware.VerifierRole("ADMIN", "RESPONSABLE")(handlers.DeleteAdhesion))
+	http.HandleFunc("/api/rappels/a-envoyer", middleware.VerifierRole("ADMIN", "RESPONSABLE")(handlers.ObtenirAdhesionsARelancer))
+	http.HandleFunc("/api/rappels/marquer", middleware.VerifierRole("ADMIN", "RESPONSABLE")(handlers.MarquerRappelEnvoye))
 
 	// ---------- Produits ----------
 	http.HandleFunc("/api/produits", middleware.VerifierConnexion(handlers.GetProduits))

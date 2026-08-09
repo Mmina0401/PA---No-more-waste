@@ -72,6 +72,18 @@ Stocks
 
 <li class="nav-item mb-2">
 
+<a class="nav-link text-white" href="../rappels/index.php">
+
+<i class="fa-solid fa-bell"></i>
+
+Rappels
+
+</a>
+
+</li>
+
+<li class="nav-item mb-2">
+
 <a class="nav-link text-white" href="../pdf">
 
 <i class="fa-solid fa-file-pdf"></i>
