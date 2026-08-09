@@ -14,6 +14,8 @@ func RegisterRoutes() {
 	// ---------- Publique (pas besoin d'être connecté) ----------
 	http.HandleFunc("/api/test", handlers.TestHandler)
 	http.HandleFunc("/api/auth/login", handlers.Connexion)
+	http.HandleFunc("/api/public/services", handlers.ObtenirServicesPublics)
+	http.HandleFunc("/api/public/inscription", handlers.InscrirePublique)
 
 	// ---------- Utilisateurs / commerçants ----------
 	http.HandleFunc("/api/utilisateurs", middleware.VerifierConnexion(handlers.GetUtilisateurs))
