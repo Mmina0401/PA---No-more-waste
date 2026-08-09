@@ -1,3 +1,4 @@
+USE no_more_waste;
 
 /*table utilisateurs*/
 CREATE TABLE utilisateur (

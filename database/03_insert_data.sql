@@ -1,3 +1,4 @@
+USE no_more_waste;
 
 /*insertion  dans la table categorie_produit*/
 INSERT INTO categorie_produit (nom, description) 

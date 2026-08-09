@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 
-	//"github.com/MMina040/PA-No-More-Waste/config"
 	"github.com/MMina040/PA-No-More-Waste/config"
 	"github.com/MMina040/PA-No-More-Waste/routes"
 )

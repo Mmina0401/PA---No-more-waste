@@ -2,7 +2,26 @@
 
 class API
 {
-    private static $baseURL = "http://localhost:8080";
+    private static $baseURLCalculee = "";
+
+    // Détermine l'adresse de l'API : celle définie par Docker si elle existe,
+    // sinon l'adresse locale habituelle (sans Docker).
+    private static function baseURL()
+    {
+        if (self::$baseURLCalculee !== "") {
+            return self::$baseURLCalculee;
+        }
+
+        $adresseAPI = getenv("ADRESSE_API");
+
+        if ($adresseAPI) {
+            self::$baseURLCalculee = "http://" . $adresseAPI;
+        } else {
+            self::$baseURLCalculee = "http://localhost:8080";
+        }
+
+        return self::$baseURLCalculee;
+    }
 
     // Construit les en-têtes envoyés à chaque appel : le type de contenu,
     // et en plus le jeton de connexion si la personne est connectée
@@ -18,7 +37,7 @@ class API
 
     public static function get($endpoint)
     {
-        $url = self::$baseURL . $endpoint;
+        $url = self::baseURL() . $endpoint;
 
         $ch = curl_init($url);
 
@@ -39,7 +58,7 @@ class API
 
     public static function post($endpoint, $data)
     {
-        $url = self::$baseURL . $endpoint;
+        $url = self::baseURL() . $endpoint;
 
         $ch = curl_init($url);
 
