@@ -4,8 +4,6 @@ session_start();
 require_once "../includes/auth.php";
 exigerRole("ADMIN", "RESPONSABLE");
 
-include "../includes/header.php";
-include "../includes/navbar.php";
 require_once "../includes/api.php";
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
@@ -25,6 +23,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     header("Location: index.php");
     exit;
 }
+
+include "../includes/header.php";
+include "../includes/navbar.php";
 ?>
 
 <div class="container-fluid">

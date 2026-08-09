@@ -16,6 +16,8 @@ func RegisterRoutes() {
 	http.HandleFunc("/api/auth/login", handlers.Connexion)
 	http.HandleFunc("/api/public/services", handlers.ObtenirServicesPublics)
 	http.HandleFunc("/api/public/inscription", handlers.InscrirePublique)
+	http.HandleFunc("/api/public/demande-collecte", handlers.DemanderCollectePublique)
+	http.HandleFunc("/api/public/candidature-benevole", handlers.CandidaterBenevole)
 
 	// ---------- Utilisateurs / commerçants ----------
 	http.HandleFunc("/api/utilisateurs", middleware.VerifierConnexion(handlers.GetUtilisateurs))

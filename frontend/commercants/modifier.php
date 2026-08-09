@@ -4,12 +4,13 @@ session_start();
 require_once "../includes/auth.php";
 exigerRole("ADMIN", "RESPONSABLE");
 
-include "../includes/header.php";
-include "../includes/navbar.php";
 require_once "../includes/api.php";
 
 $id = $_GET["id"] ?? null;
-if (!$id) { header("Location: index.php"); exit; }
+if (!$id) {
+    header("Location: index.php");
+    exit;
+}
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
@@ -31,6 +32,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 }
 
 $c = API::get("/api/utilisateurs/get?id=" . $id);
+
+include "../includes/header.php";
+include "../includes/navbar.php";
 ?>
 
 <div class="container-fluid">

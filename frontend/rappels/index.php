@@ -4,8 +4,6 @@ session_start();
 require_once "../includes/auth.php";
 exigerRole("ADMIN", "RESPONSABLE");
 
-include "../includes/header.php";
-include "../includes/navbar.php";
 require_once "../includes/api.php";
 
 if ($_SERVER["REQUEST_METHOD"] === "POST" && ($_POST["action"] ?? "") === "marquer") {
@@ -13,6 +11,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && ($_POST["action"] ?? "") === "marqu
     header("Location: index.php");
     exit;
 }
+
+include "../includes/header.php";
+include "../includes/navbar.php";
 
 $adhesionsARelancer = API::get("/api/rappels/a-envoyer");
 if (!is_array($adhesionsARelancer)) $adhesionsARelancer = [];

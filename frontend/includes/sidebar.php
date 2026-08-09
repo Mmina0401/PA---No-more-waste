@@ -36,6 +36,18 @@ Commerçants
 
 <li class="nav-item mb-2">
 
+<a class="nav-link text-white" href="../candidatures/index.php">
+
+<i class="fa-solid fa-user-plus"></i>
+
+Candidatures
+
+</a>
+
+</li>
+
+<li class="nav-item mb-2">
+
 <a class="nav-link text-white" href="../collectes/index.php">
 
 <i class="fa-solid fa-truck"></i>

@@ -23,6 +23,35 @@ type ServicePublic struct {
 	NbInscrits  int     `json:"nb_inscrits"`
 }
 
+// trouverOuCreerVisiteur cherche un compte par email, et en crée un léger
+// (rôle VISITEUR) s'il n'existe pas encore. Réutilisé par toutes les
+// actions publiques qui ont besoin de relier une action à un compte.
+func trouverOuCreerVisiteur(nom, prenom, email string) (int, error) {
+
+	var idUtilisateur int
+	err := config.DB.QueryRow(`SELECT id_utilisateur FROM utilisateur WHERE email = ?`, email).Scan(&idUtilisateur)
+	if err == nil {
+		return idUtilisateur, nil
+	}
+
+	motDePasseAleatoire := "visiteur-" + email
+	hash, errHash := bcrypt.GenerateFromPassword([]byte(motDePasseAleatoire), bcrypt.DefaultCost)
+	if errHash != nil {
+		return 0, errHash
+	}
+
+	resultat, errCreation := config.DB.Exec(`
+		INSERT INTO utilisateur (nom, prenom, email, mot_de_passe, role)
+		VALUES (?, ?, ?, ?, 'VISITEUR')
+	`, nom, prenom, email, string(hash))
+	if errCreation != nil {
+		return 0, errCreation
+	}
+
+	nouvelID, _ := resultat.LastInsertId()
+	return int(nouvelID), nil
+}
+
 // ObtenirServicesPublics renvoie uniquement les services ouverts aux
 // inscriptions. Aucune connexion nécessaire.
 // GET /api/public/services
@@ -65,10 +94,8 @@ func ObtenirServicesPublics(w http.ResponseWriter, r *http.Request) {
 }
 
 // InscrirePublique permet à une personne sans compte de s'inscrire à un
-// service. Un compte "VISITEUR" léger est créé automatiquement pour elle
-// (ou réutilisé si son email existe déjà dans la base).
+// service. Un compte "VISITEUR" léger est créé automatiquement pour elle.
 // POST /api/public/inscription
-// corps attendu : {"nom":"...","prenom":"...","email":"...","id_service":3}
 func InscrirePublique(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
@@ -93,34 +120,12 @@ func InscrirePublique(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// On regarde si cette personne a déjà un compte (par email).
-	var idUtilisateur int
-	err := config.DB.QueryRow(`SELECT id_utilisateur FROM utilisateur WHERE email = ?`, demande.Email).Scan(&idUtilisateur)
-
+	idUtilisateur, err := trouverOuCreerVisiteur(demande.Nom, demande.Prenom, demande.Email)
 	if err != nil {
-		// Personne inconnue : on lui crée un compte visiteur léger.
-		motDePasseAleatoire := "visiteur-" + demande.Email
-		hash, errHash := bcrypt.GenerateFromPassword([]byte(motDePasseAleatoire), bcrypt.DefaultCost)
-		if errHash != nil {
-			http.Error(w, "erreur lors de la création du compte", http.StatusInternalServerError)
-			return
-		}
-
-		resultat, errCreation := config.DB.Exec(`
-			INSERT INTO utilisateur (nom, prenom, email, mot_de_passe, role)
-			VALUES (?, ?, ?, ?, 'VISITEUR')
-		`, demande.Nom, demande.Prenom, demande.Email, string(hash))
-
-		if errCreation != nil {
-			http.Error(w, "impossible de créer le compte visiteur", http.StatusInternalServerError)
-			return
-		}
-
-		nouvelID, _ := resultat.LastInsertId()
-		idUtilisateur = int(nouvelID)
+		http.Error(w, "impossible de créer le compte visiteur", http.StatusInternalServerError)
+		return
 	}
 
-	// Vérifie la capacité restante avant d'inscrire (même règle que côté back-office).
 	var capaciteMax *int
 	var nbInscrits int
 
@@ -151,4 +156,116 @@ func InscrirePublique(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(map[string]string{"message": "Inscription enregistrée avec succès"})
+}
+
+// DemanderCollectePublique permet à un commerçant ou un particulier, sans
+// compte, de demander le passage d'un camion. Un compte "VISITEUR" léger
+// est créé automatiquement pour lui (comme pour l'inscription à un service).
+// POST /api/public/demande-collecte
+func DemanderCollectePublique(w http.ResponseWriter, r *http.Request) {
+
+	w.Header().Set("Content-Type", "application/json")
+
+	if r.Method != http.MethodPost {
+		http.Error(w, "méthode non autorisée", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var demande struct {
+		Nom          string `json:"nom"`
+		Prenom       string `json:"prenom"`
+		Email        string `json:"email"`
+		Adresse      string `json:"adresse"`
+		Ville        string `json:"ville"`
+		CodePostal   string `json:"code_postal"`
+		DateCollecte string `json:"date_collecte"`
+		HeureDebut   string `json:"heure_debut"`
+		HeureFin     string `json:"heure_fin"`
+		Commentaire  string `json:"commentaire"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&demande); err != nil {
+		http.Error(w, "JSON invalide", http.StatusBadRequest)
+		return
+	}
+	if demande.Nom == "" || demande.Prenom == "" || demande.Email == "" ||
+		demande.Adresse == "" || demande.Ville == "" || demande.CodePostal == "" ||
+		demande.DateCollecte == "" || demande.HeureDebut == "" || demande.HeureFin == "" {
+		http.Error(w, "tous les champs (sauf commentaire) sont obligatoires", http.StatusBadRequest)
+		return
+	}
+
+	idUtilisateur, err := trouverOuCreerVisiteur(demande.Nom, demande.Prenom, demande.Email)
+	if err != nil {
+		http.Error(w, "impossible de créer le compte visiteur", http.StatusInternalServerError)
+		return
+	}
+
+	_, err = config.DB.Exec(`
+		INSERT INTO collecte (id_utilisateur, date_collecte, heure_debut, heure_fin, adresse, ville, code_postal, commentaire, statut)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'EN_ATTENTE')
+	`, idUtilisateur, demande.DateCollecte, demande.HeureDebut, demande.HeureFin,
+		demande.Adresse, demande.Ville, demande.CodePostal, demande.Commentaire)
+
+	if err != nil {
+		http.Error(w, "impossible d'enregistrer la demande", http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(map[string]string{"message": "Demande de collecte enregistrée avec succès"})
+}
+
+// CandidaterBenevole permet à une personne, sans compte, de proposer sa
+// candidature comme bénévole. Un compte BENEVOLE est créé mais désactivé :
+// un responsable devra le valider avant que la personne puisse s'en servir.
+// POST /api/public/candidature-benevole
+func CandidaterBenevole(w http.ResponseWriter, r *http.Request) {
+
+	w.Header().Set("Content-Type", "application/json")
+
+	if r.Method != http.MethodPost {
+		http.Error(w, "méthode non autorisée", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var candidature struct {
+		Nom        string `json:"nom"`
+		Prenom     string `json:"prenom"`
+		Email      string `json:"email"`
+		MotDePasse string `json:"mot_de_passe"`
+		Telephone  string `json:"telephone"`
+		Ville      string `json:"ville"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&candidature); err != nil {
+		http.Error(w, "JSON invalide", http.StatusBadRequest)
+		return
+	}
+	if candidature.Nom == "" || candidature.Prenom == "" || candidature.Email == "" || candidature.MotDePasse == "" {
+		http.Error(w, "nom, prenom, email et mot de passe sont obligatoires", http.StatusBadRequest)
+		return
+	}
+
+	var idExistant int
+	err := config.DB.QueryRow(`SELECT id_utilisateur FROM utilisateur WHERE email = ?`, candidature.Email).Scan(&idExistant)
+	if err == nil {
+		http.Error(w, "un compte existe déjà avec cet email", http.StatusConflict)
+		return
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(candidature.MotDePasse), bcrypt.DefaultCost)
+	if err != nil {
+		http.Error(w, "erreur lors du chiffrement du mot de passe", http.StatusInternalServerError)
+		return
+	}
+
+	_, err = config.DB.Exec(`
+		INSERT INTO utilisateur (nom, prenom, email, mot_de_passe, telephone, ville, role, actif)
+		VALUES (?, ?, ?, ?, ?, ?, 'BENEVOLE', FALSE)
+	`, candidature.Nom, candidature.Prenom, candidature.Email, string(hash), candidature.Telephone, candidature.Ville)
+
+	if err != nil {
+		http.Error(w, "impossible d'enregistrer la candidature", http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(map[string]string{"message": "Candidature enregistrée, un responsable va l'examiner"})
 }

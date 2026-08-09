@@ -4,8 +4,6 @@ session_start();
 require_once "../includes/auth.php";
 exigerRole("ADMIN", "RESPONSABLE");
 
-include "../includes/header.php";
-include "../includes/navbar.php";
 require_once "../includes/api.php";
 
 if ($_SERVER["REQUEST_METHOD"] === "POST" && ($_POST["action"] ?? "") === "delete") {
@@ -25,6 +23,9 @@ function badgeStatutService($statut) {
         default   => '<span class="badge bg-light text-dark">'.htmlspecialchars($statut).'</span>',
     };
 }
+
+include "../includes/header.php";
+include "../includes/navbar.php";
 ?>
 
 <div class="container-fluid">

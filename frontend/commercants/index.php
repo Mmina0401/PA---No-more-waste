@@ -4,8 +4,6 @@ session_start();
 require_once "../includes/auth.php";
 exigerRole("ADMIN", "RESPONSABLE");
 
-include "../includes/header.php";
-include "../includes/navbar.php";
 require_once "../includes/api.php";
 
 if ($_SERVER["REQUEST_METHOD"] === "POST" && ($_POST["action"] ?? "") === "delete") {
@@ -14,14 +12,20 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && ($_POST["action"] ?? "") === "delet
     exit;
 }
 
+include "../includes/header.php";
+include "../includes/navbar.php";
+
 $commercants = API::get("/api/utilisateurs?role=COMMERCANT");
 $adhesions   = API::get("/api/adhesions");
+
 if (!is_array($commercants)) $commercants = [];
 if (!is_array($adhesions))   $adhesions   = [];
 
 $statutParCommercant = [];
+
 foreach ($adhesions as $a) {
     $id = $a["id_utilisateur"];
+
     if (!isset($statutParCommercant[$id]) || $a["date_fin"] > $statutParCommercant[$id]["date_fin"]) {
         $statutParCommercant[$id] = $a;
     }

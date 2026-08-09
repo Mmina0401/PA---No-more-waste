@@ -4,12 +4,13 @@ session_start();
 require_once "../includes/auth.php";
 exigerRole("ADMIN", "RESPONSABLE");
 
-include "../includes/header.php";
-include "../includes/navbar.php";
 require_once "../includes/api.php";
 
 $id = $_GET["id"] ?? null;
-if (!$id) { header("Location: index.php"); exit; }
+if (!$id) {
+    header("Location: index.php");
+    exit;
+}
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $payload = [
@@ -25,11 +26,16 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     ];
 
     API::post("/api/services/update", $payload);
+
     header("Location: index.php");
     exit;
 }
 
 $s = API::get("/api/services/get?id=" . urlencode($id));
+
+include "../includes/header.php";
+include "../includes/navbar.php";
+
 if (!$s || isset($s["error"])) {
     echo "<div class='container p-4'><div class='alert alert-danger'>Service introuvable.</div></div>";
     include "../includes/footer.php";
@@ -53,32 +59,39 @@ if (!$s || isset($s["error"])) {
         <label class="form-label">Nom du service</label>
         <input type="text" name="nom" class="form-control" required value="<?= htmlspecialchars($s["nom"]) ?>">
     </div>
+
     <div class="mb-3">
         <label class="form-label">Description</label>
         <textarea name="description" class="form-control"><?= htmlspecialchars($s["description"] ?? '') ?></textarea>
     </div>
+
     <div class="mb-3">
         <label class="form-label">Lieu</label>
         <input type="text" name="lieu" class="form-control" value="<?= htmlspecialchars($s["lieu"] ?? '') ?>">
     </div>
+
     <div class="mb-3">
         <label class="form-label">Date</label>
         <input type="date" name="date_service" class="form-control" value="<?= htmlspecialchars($s["date_service"] ?? '') ?>">
     </div>
+
     <div class="row">
         <div class="col mb-3">
             <label class="form-label">Heure de début</label>
             <input type="time" name="heure_debut" class="form-control" value="<?= htmlspecialchars(substr($s["heure_debut"] ?? '', 0, 5)) ?>">
         </div>
+
         <div class="col mb-3">
             <label class="form-label">Heure de fin</label>
             <input type="time" name="heure_fin" class="form-control" value="<?= htmlspecialchars(substr($s["heure_fin"] ?? '', 0, 5)) ?>">
         </div>
     </div>
+
     <div class="mb-3">
         <label class="form-label">Capacité maximale</label>
         <input type="number" name="capacite_max" class="form-control" min="1" value="<?= htmlspecialchars($s["capacite_max"] ?? '') ?>">
     </div>
+
     <div class="mb-3">
         <label class="form-label">Statut</label>
         <select name="statut" class="form-select">
