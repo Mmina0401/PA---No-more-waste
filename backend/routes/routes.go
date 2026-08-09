@@ -84,4 +84,18 @@ func RegisterRoutes() {
 	http.HandleFunc("/api/inscriptions/create", auth.VerifierRole("ADMIN", "RESPONSABLE")(handlers.CreateInscription))
 	http.HandleFunc("/api/inscriptions/update", auth.VerifierRole("ADMIN", "RESPONSABLE")(handlers.UpdateInscription))
 	http.HandleFunc("/api/inscriptions/delete", auth.VerifierRole("ADMIN", "RESPONSABLE")(handlers.DeleteInscription))
+
+	// ---------- Tournées (livraisons) ----------
+	http.HandleFunc("/api/livraisons", auth.VerifierConnexion(handlers.GetLivraisons))
+	http.HandleFunc("/api/livraisons/get", auth.VerifierConnexion(handlers.GetLivraison))
+	http.HandleFunc("/api/livraisons/create", auth.VerifierRole("ADMIN", "RESPONSABLE")(handlers.CreateLivraison))
+	http.HandleFunc("/api/livraisons/update", auth.VerifierRole("ADMIN", "RESPONSABLE")(handlers.UpdateLivraison))
+	http.HandleFunc("/api/livraisons/delete", auth.VerifierRole("ADMIN", "RESPONSABLE")(handlers.DeleteLivraison))
+
+	http.HandleFunc("/api/lignes-livraison", auth.VerifierConnexion(handlers.GetLignesLivraison))
+	http.HandleFunc("/api/lignes-livraison/create", auth.VerifierRole("ADMIN", "RESPONSABLE")(handlers.AjouterLigneLivraison))
+	http.HandleFunc("/api/lignes-livraison/delete", auth.VerifierRole("ADMIN", "RESPONSABLE")(handlers.SupprimerLigneLivraison))
+
+	http.HandleFunc("/api/associations", auth.VerifierConnexion(handlers.GetAssociations))
+	http.HandleFunc("/api/vehicules", auth.VerifierConnexion(handlers.GetVehicules))
 }

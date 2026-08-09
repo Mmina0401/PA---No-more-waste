@@ -4,6 +4,7 @@ $elementsMenu = [
     ["href" => "../commercants/index.php",  "icone" => "fa-shop",           "texte" => "Commerçants"],
     ["href" => "../candidatures/index.php", "icone" => "fa-user-plus",      "texte" => "Candidatures"],
     ["href" => "../collectes/index.php",    "icone" => "fa-truck",          "texte" => "Collectes"],
+    ["href" => "../tournees/index.php",     "icone" => "fa-route",          "texte" => "Tournées"],
     ["href" => "../services/index.php",     "icone" => "fa-calendar-days",  "texte" => "Services"],
     ["href" => "../stocks/index.php",       "icone" => "fa-box",            "texte" => "Stocks"],
     ["href" => "../rappels/index.php",      "icone" => "fa-bell",           "texte" => "Rappels"],
