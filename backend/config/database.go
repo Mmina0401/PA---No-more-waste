@@ -19,7 +19,7 @@ func ConnectDatabase() {
 		adresseMySQL = "127.0.0.1:3306"
 	}
 
-	dsn := "root:root@tcp(" + adresseMySQL + ")/no_more_waste?parseTime=true"
+	dsn := "root:root@tcp(" + adresseMySQL + ")/no_more_waste?parseTime=true&charset=utf8mb4"
 
 	DB, err = sql.Open("mysql", dsn)
 
