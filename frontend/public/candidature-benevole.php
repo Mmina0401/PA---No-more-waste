@@ -22,22 +22,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     }
 }
 
-include __DIR__ . "/../includes/header.php";
+include __DIR__ . "/entete.php";
 ?>
-
-<nav class="navbar navbar-expand-lg navbar-dark bg-success shadow-sm">
-<div class="container-fluid">
-<a class="navbar-brand fw-bold" href="services.php">
-<i class="fa-solid fa-leaf"></i> No More Waste
-</a>
-<a href="/login.php" class="btn btn-outline-light btn-sm">Espace membre</a>
-</div>
-</nav>
 
 <div class="container py-5" style="max-width: 560px;">
 
 <h1 class="mb-3">Devenir bénévole</h1>
-<p class="text-muted mb-4">Proposez vos services à l'association, sans engagement immédiat.</p>
+<p class="texte-secondaire mb-4">Proposez vos services à l'association, sans engagement immédiat.</p>
 
 <?php if ($messageSucces): ?>
     <div class="alert alert-success"><?= htmlspecialchars($messageSucces) ?></div>
@@ -46,6 +37,7 @@ include __DIR__ . "/../includes/header.php";
 <?php endif; ?>
 
 <?php if (!$messageSucces): ?>
+<div class="carte-nmw p-4">
 <form method="post">
 
     <div class="row">
@@ -80,8 +72,9 @@ include __DIR__ . "/../includes/header.php";
         <input type="text" name="ville" class="form-control">
     </div>
 
-    <button type="submit" class="btn btn-success w-100">Envoyer ma candidature</button>
+    <button type="submit" class="btn w-100" style="background: var(--vert-feuille); color: var(--anthracite); border-radius: 14px; font-weight: 600; border: none; padding: 10px 20px;">Envoyer ma candidature</button>
 </form>
+</div>
 <?php endif; ?>
 
 </div>
