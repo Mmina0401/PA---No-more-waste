@@ -85,6 +85,34 @@ func RegisterRoutes() {
 	http.HandleFunc("/api/inscriptions/update", auth.VerifierRole("ADMIN", "RESPONSABLE")(handlers.UpdateInscription))
 	http.HandleFunc("/api/inscriptions/delete", auth.VerifierRole("ADMIN", "RESPONSABLE")(handlers.DeleteInscription))
 
+	http.HandleFunc(
+		"/api/benevoles",
+		auth.VerifierRole(
+			"ADMIN",
+			"RESPONSABLE",
+		)(handlers.GetBenevoles),
+	)
+
+	http.HandleFunc(
+		"/api/benevoles/update",
+		auth.VerifierRole(
+			"ADMIN",
+			"RESPONSABLE",
+		)(handlers.UpdateBenevole),
+	)
+	http.HandleFunc(
+		"/api/benevoles/disponibilites",
+		auth.VerifierRole("ADMIN", "RESPONSABLE")(handlers.AddDisponibiliteBenevole),
+	)
+
+	http.HandleFunc(
+		"/api/planning/export",
+		auth.VerifierRole(
+			"ADMIN",
+			"RESPONSABLE",
+		)(handlers.ExportPlanning),
+	)
+
 	// ---------- Tournées (livraisons) ----------
 	http.HandleFunc("/api/livraisons", auth.VerifierConnexion(handlers.GetLivraisons))
 	http.HandleFunc("/api/livraisons/get", auth.VerifierConnexion(handlers.GetLivraison))

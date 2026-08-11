@@ -51,7 +51,7 @@ class API
             return [];
         }
 
-        curl_close($ch);
+       
 
         return json_decode($response, true);
     }
@@ -69,7 +69,6 @@ class API
 
         $response = curl_exec($ch);
 
-        curl_close($ch);
 
         return json_decode($response, true);
     }
