@@ -6,6 +6,7 @@ include "../includes/navbar.php";
 require_once "../includes/api.php";
 
 $stocks = API::get("/api/stocks");
+
 ?>
 
 <div class="container-fluid">
@@ -19,6 +20,7 @@ $stocks = API::get("/api/stocks");
 <div class="col-md-10 p-4">
 
 <h2>Gestion des Stocks</h2>
+
 
 <hr>
 
@@ -68,11 +70,12 @@ Modifier
 
 </a>
 
-<a href="#"
-class="btn btn-danger btn-sm">
-
-Supprimer
-
+<a
+    href="supprimer.php?id=<?= $stock["id_stock"] ?>"
+    class="btn btn-danger btn-sm"
+    onclick="return confirm('Supprimer ce stock ?');"
+>
+    Supprimer
 </a>
 
 </td>

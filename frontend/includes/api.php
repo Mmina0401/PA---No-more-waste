@@ -56,21 +56,70 @@ class API
         return json_decode($response, true);
     }
 
-    public static function post($endpoint, $data)
+   public static function post($endpoint, $data)
+{
+    $url = self::baseURL() . $endpoint;
+
+    $ch = curl_init($url);
+
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, self::enTetes());
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+
+    $response = curl_exec($ch);
+
+    echo "<pre>";
+    echo "URL : $url\n\n";
+
+    echo "HTTP : ";
+    var_dump(curl_getinfo($ch, CURLINFO_HTTP_CODE));
+
+    echo "\nRéponse :\n";
+    var_dump($response);
+
+    echo "\nErreur CURL :\n";
+    var_dump(curl_error($ch));
+    echo "</pre>";
+
+    curl_close($ch);
+
+    return json_decode($response, true);
+}
+
+    public static function put($endpoint, $data)
+   {
+     $url = self::baseURL() . $endpoint;
+
+     $ch = curl_init($url);
+
+     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+     curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
+     curl_setopt($ch, CURLOPT_HTTPHEADER, self::enTetes());
+     curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+
+     $response = curl_exec($ch);
+
+     curl_close($ch);
+
+     return json_decode($response, true);
+    }
+
+   public static function delete($endpoint, $data)
     {
-        $url = self::baseURL() . $endpoint;
+     $url = self::baseURL() . $endpoint;
 
-        $ch = curl_init($url);
+     $ch = curl_init($url);
+   
+     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+     curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");
+     curl_setopt($ch, CURLOPT_HTTPHEADER, self::enTetes());
+     curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
 
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, self::enTetes());
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+     $response = curl_exec($ch);
+ 
+     curl_close($ch);
 
-        $response = curl_exec($ch);
-
-        curl_close($ch);
-
-        return json_decode($response, true);
+     return json_decode($response, true);
     }
 }

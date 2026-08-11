@@ -8,61 +8,48 @@ import (
 	"github.com/MMina040/PA-No-More-Waste/models"
 )
 
-func GetCollectes(w http.ResponseWriter, r *http.Request) {
+func GetCollecte(w http.ResponseWriter, r *http.Request) {
 
-	collectes := []models.Collecte{}
+	id := r.URL.Query().Get("id")
 
-	rows, err := config.DB.Query(`
-		SELECT
-			id_collecte,
-			id_utilisateur,
-			id_vehicule,
-			date_collecte,
-			heure_debut,
-			heure_fin,
-			adresse,
-			ville,
-			code_postal,
-			commentaire,
-			statut
-		FROM collecte
-	`)
+	var c models.Collecte
+
+	err := config.DB.QueryRow(`
+        SELECT
+            id_collecte,
+            id_utilisateur,
+            id_vehicule,
+            date_collecte,
+            heure_debut,
+            heure_fin,
+            adresse,
+            ville,
+            code_postal,
+            commentaire,
+            statut
+        FROM collecte
+        WHERE id_collecte=?
+    `, id).Scan(
+		&c.IDCollecte,
+		&c.IDUtilisateur,
+		&c.IDVehicule,
+		&c.DateCollecte,
+		&c.HeureDebut,
+		&c.HeureFin,
+		&c.Adresse,
+		&c.Ville,
+		&c.CodePostal,
+		&c.Commentaire,
+		&c.Statut,
+	)
 
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
 
-	defer rows.Close()
-
-	for rows.Next() {
-
-		var c models.Collecte
-
-		err := rows.Scan(
-			&c.IDCollecte,
-			&c.IDUtilisateur,
-			&c.IDVehicule,
-			&c.DateCollecte,
-			&c.HeureDebut,
-			&c.HeureFin,
-			&c.Adresse,
-			&c.Ville,
-			&c.CodePostal,
-			&c.Commentaire,
-			&c.Statut,
-		)
-
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		collectes = append(collectes, c)
-	}
-
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(collectes)
+	json.NewEncoder(w).Encode(c)
 }
 
 func CreateCollecte(w http.ResponseWriter, r *http.Request) {
