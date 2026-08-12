@@ -17,6 +17,9 @@ func RegisterRoutes() {
 	http.HandleFunc("/api/public/demande-collecte", handlers.DemanderCollectePublique)
 	http.HandleFunc("/api/public/candidature-benevole", handlers.CandidaterBenevole)
 
+	// ---------- Espace bénévole ----------
+	http.HandleFunc("/api/benevole/planning", auth.VerifierRole("BENEVOLE")(handlers.GetPlanningBenevole))
+
 	// ---------- Utilisateurs / commerçants ----------
 	http.HandleFunc("/api/utilisateurs", auth.VerifierConnexion(handlers.GetUtilisateurs))
 	http.HandleFunc("/api/utilisateurs/get", auth.VerifierConnexion(handlers.GetUtilisateur))
@@ -47,7 +50,8 @@ func RegisterRoutes() {
 	http.HandleFunc("/api/categories/delete", auth.VerifierRole("ADMIN", "RESPONSABLE")(handlers.DeleteCategorie))
 
 	// ---------- Collectes ----------
-	http.HandleFunc("/api/collectes", auth.VerifierConnexion(handlers.GetCollectes))
+	http.HandleFunc("/api/collectes", auth.VerifierConnexion(handlers.GetCollecte))
+	http.HandleFunc("/api/collectes/get", auth.VerifierConnexion(handlers.GetCollecte))
 	http.HandleFunc("/api/collectes/create", auth.VerifierRole("ADMIN", "RESPONSABLE")(handlers.CreateCollecte))
 	http.HandleFunc("/api/collectes/update", auth.VerifierRole("ADMIN", "RESPONSABLE")(handlers.UpdateCollecte))
 	http.HandleFunc("/api/collectes/delete", auth.VerifierRole("ADMIN", "RESPONSABLE")(handlers.DeleteCollecte))
@@ -126,4 +130,6 @@ func RegisterRoutes() {
 
 	http.HandleFunc("/api/associations", auth.VerifierConnexion(handlers.GetAssociations))
 	http.HandleFunc("/api/vehicules", auth.VerifierConnexion(handlers.GetVehicules))
+
+	http.HandleFunc("/api/livraisons/pdf", auth.VerifierConnexion(handlers.GenererPDFLivraison))
 }

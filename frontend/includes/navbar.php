@@ -2,7 +2,7 @@
 
 <div class="container-fluid">
 
-<a class="navbar-brand fw-bold" href="/dashboard.php">
+<a class="navbar-brand fw-bold" href="/public/accueil.php">
 
 <i class="fa-solid fa-leaf"></i>
 

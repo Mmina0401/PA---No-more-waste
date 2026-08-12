@@ -2,6 +2,7 @@ services:
 
   db:
     image: mysql:8.0
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     environment:
       MYSQL_ROOT_PASSWORD: root
     ports:
@@ -28,11 +29,15 @@ services:
   frontend:
     build: ./frontend
     environment:
-      ADRESSE_API: backend:8080
+     ADRESSE_API: backend:8080
     ports:
-      - "8000:8000"
+    - "8000:8000"
+
+    volumes:
+    - ./frontend:/app
+
     depends_on:
-      - backend
+    - backend
 
 volumes:
   donnees_mysql:

@@ -139,11 +139,6 @@ func Connexion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !compteActif {
-		http.Error(w, "ce compte est désactivé", http.StatusForbidden)
-		return
-	}
-
 	motDePasseValide := false
 	dejaChiffreAvecBcrypt := strings.HasPrefix(motDePasseEnBase, "$2a$") ||
 		strings.HasPrefix(motDePasseEnBase, "$2b$") ||
@@ -164,6 +159,15 @@ func Connexion(w http.ResponseWriter, r *http.Request) {
 
 	if !motDePasseValide {
 		http.Error(w, "email ou mot de passe incorrect", http.StatusUnauthorized)
+		return
+	}
+
+	if !compteActif {
+		w.WriteHeader(http.StatusForbidden)
+		json.NewEncoder(w).Encode(map[string]string{
+			"error":   "COMPTE_EN_ATTENTE",
+			"message": "Votre candidature est en attente de validation par un responsable.",
+		})
 		return
 	}
 

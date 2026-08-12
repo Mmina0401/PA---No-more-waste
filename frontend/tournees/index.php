@@ -66,6 +66,9 @@ include "../includes/navbar.php";
 <td><?= badgeStatutTournee($t["statut"]) ?></td>
 <td>
 <a href="formulaire.php?id=<?= $t["id_livraison"] ?>" class="btn btn-warning btn-sm">Gérer</a>
+
+<a href="pdf.php?id=<?= $t["id_livraison"] ?>"class="btn btn-primary btn-sm">PDF</a>
+
 <form method="post" style="display:inline;" onsubmit="return confirm('Supprimer cette tournée ?');">
 <input type="hidden" name="action" value="delete">
 <input type="hidden" name="id" value="<?= $t["id_livraison"] ?>">

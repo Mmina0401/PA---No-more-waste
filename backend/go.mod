@@ -2,7 +2,10 @@ module github.com/MMina040/PA-No-More-Waste
 
 go 1.25.1
 
-require github.com/go-sql-driver/mysql v1.9.3
+require (
+	github.com/go-pdf/fpdf v0.9.0
+	github.com/go-sql-driver/mysql v1.9.3
+)
 
 require (
 	github.com/richardlehane/mscfb v1.0.7 // indirect
