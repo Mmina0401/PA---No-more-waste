@@ -18,7 +18,26 @@ func RegisterRoutes() {
 	http.HandleFunc("/api/public/candidature-benevole", handlers.CandidaterBenevole)
 
 	// ---------- Espace bénévole ----------
-	http.HandleFunc("/api/benevole/planning", auth.VerifierRole("BENEVOLE")(handlers.GetPlanningBenevole))
+	http.HandleFunc(
+		"/api/benevole/planning",
+		auth.VerifierRole("BENEVOLE")(handlers.GetPlanningBenevole),
+	)
+
+	// ---------- Gestion des bénévoles ----------
+	http.HandleFunc(
+		"/api/benevoles",
+		auth.VerifierRole("ADMIN", "RESPONSABLE")(handlers.GetBenevoles),
+	)
+
+	http.HandleFunc(
+		"/api/benevoles/update",
+		auth.VerifierRole("ADMIN", "RESPONSABLE")(handlers.UpdateBenevole),
+	)
+
+	http.HandleFunc(
+		"/api/benevoles/disponibilites",
+		auth.VerifierRole("ADMIN", "RESPONSABLE")(handlers.AddDisponibiliteBenevole),
+	)
 
 	// ---------- Utilisateurs / commerçants ----------
 	http.HandleFunc("/api/utilisateurs", auth.VerifierConnexion(handlers.GetUtilisateurs))
@@ -132,4 +151,10 @@ func RegisterRoutes() {
 	http.HandleFunc("/api/vehicules", auth.VerifierConnexion(handlers.GetVehicules))
 
 	http.HandleFunc("/api/livraisons/pdf", auth.VerifierConnexion(handlers.GenererPDFLivraison))
+
+	// ---------- Planning Excel ----------
+	http.HandleFunc(
+		"/api/planning/export",
+		auth.VerifierRole("ADMIN", "RESPONSABLE")(handlers.ExportPlanning),
+	)
 }

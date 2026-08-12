@@ -11,5 +11,5 @@ if (($_SESSION["utilisateur"]["role"] ?? "") === "BENEVOLE") {
     exit;
 }
 
-header("Location: dashboard.php");
+header("Location: /dashboard.php");
 exit;

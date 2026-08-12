@@ -5,7 +5,7 @@ require_once __DIR__ . "/../includes/auth.php";
 
 exigerRole("ADMIN", "RESPONSABLE");
 
-$token = $_SESSION["token"] ?? $_SESSION["jeton"] ?? "";
+$token = $_SESSION["jeton"] ?? "";
 
 if ($token === "") {
     die("Token de connexion introuvable.");

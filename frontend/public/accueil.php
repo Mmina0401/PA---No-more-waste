@@ -1,14 +1,12 @@
 <?php
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 include __DIR__ . "/entete.php";
 ?>
 
 <style>
-    /* =========================================================
-       Accueil public — NO MORE WASTE
-       Respecte la charte : vert forêt, bleu planète, vert feuille,
-       bleu ciel, jaune solaire, fond brume naturelle et anthracite.
-       ========================================================= */
     :root {
         --nmw-bg: #F4F9F3;
         --nmw-green: #2E7D32;
@@ -351,6 +349,7 @@ include __DIR__ . "/entete.php";
         .nmw-hero { padding-top: 48px; }
         .nmw-card p { min-height: auto; }
         .nmw-values-panel { grid-template-columns: 1fr; }
+
         .nmw-value + .nmw-value {
             border-left: 0;
             border-top: 1px solid var(--nmw-border);
@@ -359,123 +358,223 @@ include __DIR__ . "/entete.php";
 </style>
 
 <main class="nmw-home">
+
     <section class="nmw-hero">
         <div class="container text-center">
+
             <div class="nmw-eyebrow">
                 <i class="fa-solid fa-leaf"></i>
-                Association solidaire & anti-gaspillage
+                <?= t("home_eyebrow") ?>
             </div>
 
             <h1 class="nmw-title">
-                Donner une seconde vie,<br>
-                <span class="green">préserver</span> <span class="blue">demain.</span>
+                <?= t("home_title_1") ?><br>
+                <span class="green"><?= t("home_title_2") ?></span>
+                <span class="blue"><?= t("home_title_3") ?></span>
             </h1>
 
-            <p class="nmw-tagline">Collecter • Partager • Préserver</p>
+            <p class="nmw-tagline">
+                <?= t("home_tagline") ?>
+            </p>
 
             <p class="nmw-intro">
-                NO MORE WASTE met en relation commerçants, particuliers, bénévoles et bénéficiaires
-                pour réduire le gaspillage et transformer les surplus en ressources utiles.
+                <?= t("home_intro") ?>
             </p>
 
             <div class="nmw-impact-row">
-                <span class="nmw-impact-pill"><i class="fa-solid fa-recycle"></i> Anti-gaspillage</span>
-                <span class="nmw-impact-pill"><i class="fa-solid fa-people-group"></i> Solidarité locale</span>
-                <span class="nmw-impact-pill"><i class="fa-solid fa-earth-europe"></i> Impact responsable</span>
+
+                <span class="nmw-impact-pill">
+                    <i class="fa-solid fa-recycle"></i>
+                    <?= t("home_anti_waste") ?>
+                </span>
+
+                <span class="nmw-impact-pill">
+                    <i class="fa-solid fa-people-group"></i>
+                    <?= t("home_local_solidarity") ?>
+                </span>
+
+                <span class="nmw-impact-pill">
+                    <i class="fa-solid fa-earth-europe"></i>
+                    <?= t("home_responsible_impact") ?>
+                </span>
+
             </div>
+
         </div>
     </section>
 
     <section class="nmw-actions">
+
         <div class="container">
+
             <div class="nmw-section-head">
-                <div class="nmw-section-kicker">Agir avec nous</div>
-                <h2 class="nmw-section-title">Une action simple peut faire la différence</h2>
+
+                <div class="nmw-section-kicker">
+                    <?= t("home_act_with_us") ?>
+                </div>
+
+                <h2 class="nmw-section-title">
+                    <?= t("home_action_title") ?>
+                </h2>
+
                 <p class="nmw-section-text">
-                    Découvrez nos services, organisez une collecte ou rejoignez notre réseau de bénévoles.
-                    Aucun compte n'est nécessaire pour consulter les actions disponibles.
+                    <?= t("home_action_text") ?>
                 </p>
+
             </div>
 
             <div class="row g-4">
+
                 <div class="col-lg-4 col-md-6">
+
                     <article class="nmw-card services">
+
                         <div class="nmw-icon-wrap">
                             <i class="fa-solid fa-calendar-days"></i>
                         </div>
-                        <span class="nmw-card-label">Partager & apprendre</span>
-                        <h3>Nos services</h3>
+
+                        <span class="nmw-card-label">
+                            <?= t("home_services_label") ?>
+                        </span>
+
+                        <h3><?= t("home_services_title") ?></h3>
+
                         <p>
-                            Ateliers cuisine, réparation, conseils anti-gaspi et autres initiatives
-                            pour consommer autrement et partager des savoir-faire.
+                            <?= t("home_services_text") ?>
                         </p>
+
                         <a href="services.php" class="nmw-btn nmw-btn-primary">
-                            <span>Voir les services</span>
+
+                            <span><?= t("home_services_button") ?></span>
+
                             <i class="fa-solid fa-arrow-right"></i>
+
                         </a>
+
                     </article>
+
                 </div>
 
                 <div class="col-lg-4 col-md-6">
+
                     <article class="nmw-card collecte">
+
                         <div class="nmw-icon-wrap">
                             <i class="fa-solid fa-truck"></i>
                         </div>
-                        <span class="nmw-card-label">Donner plutôt que jeter</span>
-                        <h3>Demander une collecte</h3>
+
+                        <span class="nmw-card-label">
+                            <?= t("home_collection_label") ?>
+                        </span>
+
+                        <h3><?= t("home_collection_title") ?></h3>
+
                         <p>
-                            Commerçant ou particulier, signalez vos invendus ou produits à récupérer
-                            afin que notre équipe puisse organiser une collecte.
+                            <?= t("home_collection_text") ?>
                         </p>
+
                         <a href="demande-collecte.php" class="nmw-btn nmw-btn-secondary">
-                            <span>Faire une demande</span>
+
+                            <span><?= t("home_collection_button") ?></span>
+
                             <i class="fa-solid fa-arrow-right"></i>
+
                         </a>
+
                     </article>
+
                 </div>
 
                 <div class="col-lg-4 col-md-6 mx-md-auto mx-lg-0">
+
                     <article class="nmw-card benevole">
+
                         <div class="nmw-icon-wrap">
                             <i class="fa-solid fa-hand-holding-heart"></i>
                         </div>
-                        <span class="nmw-card-label">S'engager concrètement</span>
-                        <h3>Devenir bénévole</h3>
+
+                        <span class="nmw-card-label">
+                            <?= t("home_volunteer_label") ?>
+                        </span>
+
+                        <h3><?= t("home_volunteer_title") ?></h3>
+
                         <p>
-                            Chauffeur, cuisinier, bricoleur ou simplement motivé : mettez vos compétences
-                            et votre temps au service d'une mission utile.
+                            <?= t("home_volunteer_text") ?>
                         </p>
+
                         <a href="candidature-benevole.php" class="nmw-btn nmw-btn-leaf">
-                            <span>Candidater</span>
+
+                            <span><?= t("home_volunteer_button") ?></span>
+
                             <i class="fa-solid fa-arrow-right"></i>
+
                         </a>
+
                     </article>
+
                 </div>
+
             </div>
+
         </div>
+
     </section>
 
     <section class="nmw-values">
+
         <div class="container">
+
             <div class="nmw-values-panel">
+
                 <div class="nmw-value">
+
                     <i class="fa-solid fa-seedling"></i>
-                    <strong>Préserver</strong>
-                    <span>Réduire le gaspillage et prolonger la vie des ressources.</span>
+
+                    <strong>
+                        <?= t("home_preserve") ?>
+                    </strong>
+
+                    <span>
+                        <?= t("home_preserve_text") ?>
+                    </span>
+
                 </div>
+
                 <div class="nmw-value">
+
                     <i class="fa-solid fa-share-nodes"></i>
-                    <strong>Partager</strong>
-                    <span>Créer du lien entre celles et ceux qui donnent, aident et reçoivent.</span>
+
+                    <strong>
+                        <?= t("home_share") ?>
+                    </strong>
+
+                    <span>
+                        <?= t("home_share_text") ?>
+                    </span>
+
                 </div>
+
                 <div class="nmw-value">
+
                     <i class="fa-solid fa-location-dot"></i>
-                    <strong>Agir localement</strong>
-                    <span>Des actions concrètes au plus près des besoins et des territoires.</span>
+
+                    <strong>
+                        <?= t("home_local_action") ?>
+                    </strong>
+
+                    <span>
+                        <?= t("home_local_action_text") ?>
+                    </span>
+
                 </div>
+
             </div>
+
         </div>
+
     </section>
+
 </main>
 
 <?php include __DIR__ . "/../includes/footer.php"; ?>

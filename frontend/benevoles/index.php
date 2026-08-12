@@ -49,304 +49,431 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 }
 
 $benevoles = API::get("/api/benevoles");
+
+include __DIR__ . "/../includes/header.php";
+include __DIR__ . "/../includes/navbar.php";
 ?>
 
-<!DOCTYPE html>
-<html lang="fr">
+<style>
+:root {
+    --nmw-bg: #F4F9F3;
+    --nmw-green: #2E7D32;
+    --nmw-blue: #2B7A9B;
+    --nmw-leaf: #7BC96F;
+    --nmw-yellow: #F2C94C;
+    --nmw-text: #263238;
+    --nmw-muted: #66767d;
+    --nmw-white: #FFFFFF;
+}
 
-<head>
-    <meta charset="UTF-8">
-    <title>Gestion des bénévoles</title>
+body {
+    background: var(--nmw-bg);
+    color: var(--nmw-text);
+}
 
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #F4F9F3;
-            margin: 0;
-            padding: 40px;
-            color: #263238;
-        }
+.nmw-shell {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 40px 24px 60px;
+}
 
-        h1 {
-            color: #2E7D32;
-        }
+.nmw-title {
+    color: var(--nmw-green);
+    font-weight: 800;
+    margin-bottom: 8px;
+}
 
-        .container {
-            max-width: 1400px;
-            margin: auto;
-        }
+.nmw-subtitle {
+    color: var(--nmw-muted);
+    margin-bottom: 24px;
+}
 
-        .message {
-            background-color: #7BC96F;
-            padding: 12px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-        }
+.nmw-alert-success {
+    background: rgba(123, 201, 111, .25);
+    color: #2f6f2d;
+    padding: 14px 18px;
+    border-radius: 14px;
+    margin-bottom: 20px;
+}
 
-        .error {
-            background-color: #F2C94C;
-            padding: 12px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-        }
+.nmw-alert-error {
+    background: rgba(242, 201, 76, .28);
+    color: #765d00;
+    padding: 14px 18px;
+    border-radius: 14px;
+    margin-bottom: 20px;
+}
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background-color: white;
-            border-radius: 14px;
-            overflow: hidden;
-        }
+.nmw-table-wrap {
+    background: white;
+    border-radius: 18px;
+    overflow-x: auto;
+    box-shadow: 0 8px 28px rgba(38, 50, 56, .07);
+}
 
-        th {
-            background-color: #2E7D32;
-            color: white;
-            padding: 14px;
-            text-align: left;
-        }
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
 
-        td {
-            padding: 14px;
-            border-bottom: 1px solid #ddd;
-        }
+th {
+    background: var(--nmw-green);
+    color: white;
+    padding: 14px;
+    text-align: left;
+    white-space: nowrap;
+}
 
-        tr:hover {
-            background-color: #F4F9F3;
-        }
+td {
+    padding: 14px;
+    border-bottom: 1px solid #edf2ed;
+    vertical-align: middle;
+}
 
-        .actif {
-            background-color: #7BC96F;
-            padding: 5px 10px;
-            border-radius: 10px;
-        }
+tr:hover {
+    background: #f8fbf7;
+}
 
-        .inactif {
-            background-color: #F2C94C;
-            padding: 5px 10px;
-            border-radius: 10px;
-        }
+.nmw-badge {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 5px 10px;
+    font-size: .78rem;
+    font-weight: 800;
+}
 
-        .btn {
-            background-color: #2B7A9B;
-            color: white;
-            border: none;
-            padding: 8px 12px;
-            border-radius: 10px;
-            cursor: pointer;
-        }
+.nmw-badge-active {
+    background: rgba(123, 201, 111, .22);
+    color: #2f7b2b;
+}
 
-        dialog {
-            border: none;
-            border-radius: 16px;
-            padding: 25px;
-            width: 420px;
-        }
+.nmw-badge-waiting {
+    background: rgba(242, 201, 76, .28);
+    color: #765d00;
+}
 
-        dialog::backdrop {
-            background: rgba(0, 0, 0, 0.4);
-        }
+.nmw-skill {
+    display: inline-block;
+    background: rgba(43, 122, 155, .12);
+    color: #1f6682;
+    padding: 4px 8px;
+    border-radius: 999px;
+    margin: 2px;
+    font-size: .78rem;
+    font-weight: 700;
+}
 
-        .field {
-            margin-bottom: 15px;
-        }
+.nmw-btn {
+    background: var(--nmw-blue);
+    color: white;
+    border: none;
+    padding: 8px 13px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 700;
+}
 
-        .field label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
+.nmw-btn:hover {
+    background: #226985;
+}
 
-        .field input[type="text"],
-        .field input[type="email"] {
-            width: 100%;
-            padding: 9px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            box-sizing: border-box;
-        }
+dialog {
+    border: none;
+    border-radius: 18px;
+    width: min(520px, 92vw);
+    padding: 26px;
+}
 
-        .competence-item {
-            margin: 7px 0;
-        }
+dialog::backdrop {
+    background: rgba(0, 0, 0, .45);
+}
 
-        .actions-dialog {
-            margin-top: 20px;
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-        }
+.nmw-field {
+    margin-bottom: 15px;
+}
 
-        .btn-save {
-            background-color: #2E7D32;
-            color: white;
-            border: none;
-            padding: 9px 14px;
-            border-radius: 10px;
-            cursor: pointer;
-        }
+.nmw-field label {
+    display: block;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
 
-        .btn-cancel {
-            background-color: #ddd;
-            border: none;
-            padding: 9px 14px;
-            border-radius: 10px;
-            cursor: pointer;
-        }
-    </style>
-</head>
+.nmw-field input[type="text"],
+.nmw-field input[type="email"] {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccd6ce;
+    border-radius: 10px;
+    box-sizing: border-box;
+}
 
-<body>
+.nmw-skill-line {
+    margin: 7px 0;
+}
 
-<div class="container">
+.nmw-dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 22px;
+}
 
-    <h1>Gestion des bénévoles</h1>
+.nmw-btn-save {
+    background: var(--nmw-green);
+    color: white;
+    border: none;
+    padding: 9px 15px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 700;
+}
+
+.nmw-btn-cancel {
+    background: #e7ece8;
+    color: var(--nmw-text);
+    border: none;
+    padding: 9px 15px;
+    border-radius: 10px;
+    cursor: pointer;
+}
+</style>
+
+<main class="nmw-shell">
+
+    <h1 class="nmw-title">Gestion des bénévoles</h1>
+    <p class="nmw-subtitle">
+        Consultez et modifiez les informations, compétences et statuts des bénévoles.
+    </p>
 
     <?php if ($message): ?>
-        <div class="message">
+        <div class="nmw-alert-success">
             <?= htmlspecialchars($message) ?>
         </div>
     <?php endif; ?>
 
     <?php if ($error): ?>
-        <div class="error">
+        <div class="nmw-alert-error">
             <?= htmlspecialchars($error) ?>
         </div>
     <?php endif; ?>
 
     <?php if (!is_array($benevoles)): ?>
 
-        <p>Impossible de récupérer les bénévoles.</p>
+        <div class="nmw-alert-error">
+            Impossible de récupérer les bénévoles.
+        </div>
 
     <?php else: ?>
 
-        <table>
-            <thead>
-            <tr>
-                <th>Nom</th>
-                <th>Prénom</th>
-                <th>Email</th>
-                <th>Téléphone</th>
-                <th>Ville</th>
-                <th>Statut</th>
-                <th>Compétences</th>
-                <th>Actions</th>
-            </tr>
-            </thead>
+        <div class="nmw-table-wrap">
 
-            <tbody>
-
-            <?php foreach ($benevoles as $benevole): ?>
-
+            <table>
+                <thead>
                 <tr>
-                    <td><?= htmlspecialchars($benevole["nom"] ?? "") ?></td>
-                    <td><?= htmlspecialchars($benevole["prenom"] ?? "") ?></td>
-                    <td><?= htmlspecialchars($benevole["email"] ?? "") ?></td>
-                    <td><?= htmlspecialchars($benevole["telephone"] ?? "") ?></td>
-                    <td><?= htmlspecialchars($benevole["ville"] ?? "") ?></td>
-
-                    <td>
-                        <?php if (!empty($benevole["actif"])): ?>
-                            <span class="actif">Actif</span>
-                        <?php else: ?>
-                            <span class="inactif">En attente</span>
-                        <?php endif; ?>
-                    </td>
-
-                    <td>
-                        <?php
-                        if (!empty($benevole["competences"])) {
-                            echo htmlspecialchars(implode(", ", $benevole["competences"]));
-                        } else {
-                            echo "Aucune";
-                        }
-                        ?>
-                    </td>
-
-                    <td>
-                        <button
-                            class="btn"
-                            onclick='ouvrirModification(<?= json_encode($benevole, JSON_HEX_APOS | JSON_HEX_QUOT) ?>)'
-                        >
-                            Modifier
-                        </button>
-                    </td>
+                    <th>Nom</th>
+                    <th>Prénom</th>
+                    <th>Email</th>
+                    <th>Téléphone</th>
+                    <th>Ville</th>
+                    <th>Statut</th>
+                    <th>Compétences</th>
+                    <th>Actions</th>
                 </tr>
+                </thead>
 
-            <?php endforeach; ?>
+                <tbody>
 
-            </tbody>
-        </table>
+                <?php foreach ($benevoles as $benevole): ?>
+
+                    <tr>
+
+                        <td><?= htmlspecialchars($benevole["nom"] ?? "") ?></td>
+
+                        <td><?= htmlspecialchars($benevole["prenom"] ?? "") ?></td>
+
+                        <td><?= htmlspecialchars($benevole["email"] ?? "") ?></td>
+
+                        <td>
+                            <?= htmlspecialchars($benevole["telephone"] ?? "Non renseigné") ?>
+                        </td>
+
+                        <td>
+                            <?= htmlspecialchars($benevole["ville"] ?? "Non renseignée") ?>
+                        </td>
+
+                        <td>
+                            <?php if (!empty($benevole["actif"])): ?>
+                                <span class="nmw-badge nmw-badge-active">
+                                    Actif
+                                </span>
+                            <?php else: ?>
+                                <span class="nmw-badge nmw-badge-waiting">
+                                    En attente
+                                </span>
+                            <?php endif; ?>
+                        </td>
+
+                        <td>
+
+                            <?php if (!empty($benevole["competences"])): ?>
+
+                                <?php foreach ($benevole["competences"] as $competence): ?>
+
+                                    <span class="nmw-skill">
+                                        <?= htmlspecialchars($competence) ?>
+                                    </span>
+
+                                <?php endforeach; ?>
+
+                            <?php else: ?>
+
+                                <span class="text-muted">
+                                    Aucune
+                                </span>
+
+                            <?php endif; ?>
+
+                        </td>
+
+                        <td>
+
+                            <button
+                                class="nmw-btn"
+                                onclick='ouvrirModification(
+                                    <?= json_encode(
+                                        $benevole,
+                                        JSON_HEX_APOS | JSON_HEX_QUOT
+                                    ) ?>
+                                )'
+                            >
+                                Modifier
+                            </button>
+
+                        </td>
+
+                    </tr>
+
+                <?php endforeach; ?>
+
+                </tbody>
+            </table>
+
+        </div>
 
     <?php endif; ?>
 
-</div>
+</main>
 
 <dialog id="editDialog">
 
-    <h2>Modifier le bénévole</h2>
+    <h2 class="mb-4">
+        Modifier le bénévole
+    </h2>
 
     <form method="POST">
 
-        <input type="hidden" name="id_utilisateur" id="id_utilisateur">
+        <input
+            type="hidden"
+            name="id_utilisateur"
+            id="id_utilisateur"
+        >
 
-        <div class="field">
+        <div class="nmw-field">
             <label>Nom</label>
-            <input type="text" name="nom" id="nom" required>
+            <input
+                type="text"
+                name="nom"
+                id="nom"
+                required
+            >
         </div>
 
-        <div class="field">
+        <div class="nmw-field">
             <label>Prénom</label>
-            <input type="text" name="prenom" id="prenom" required>
+            <input
+                type="text"
+                name="prenom"
+                id="prenom"
+                required
+            >
         </div>
 
-        <div class="field">
+        <div class="nmw-field">
             <label>Email</label>
-            <input type="email" name="email" id="email" required>
+            <input
+                type="email"
+                name="email"
+                id="email"
+                required
+            >
         </div>
 
-        <div class="field">
+        <div class="nmw-field">
             <label>Téléphone</label>
-            <input type="text" name="telephone" id="telephone">
+            <input
+                type="text"
+                name="telephone"
+                id="telephone"
+            >
         </div>
 
-        <div class="field">
+        <div class="nmw-field">
             <label>Ville</label>
-            <input type="text" name="ville" id="ville">
+            <input
+                type="text"
+                name="ville"
+                id="ville"
+            >
         </div>
 
-        <div class="field">
+        <div class="nmw-field">
+
             <label>
-                <input type="checkbox" name="actif" id="actif">
+                <input
+                    type="checkbox"
+                    name="actif"
+                    id="actif"
+                >
                 Bénévole actif
             </label>
+
         </div>
 
-        <div class="field">
-            <label>Compétences</label>
+        <div class="nmw-field">
+
+            <label>
+                Compétences
+            </label>
 
             <?php foreach ($competencesDisponibles as $id => $nom): ?>
 
-                <div class="competence-item">
+                <div class="nmw-skill-line">
+
                     <label>
+
                         <input
                             type="checkbox"
                             name="competences[]"
                             value="<?= $id ?>"
                             data-nom="<?= htmlspecialchars($nom) ?>"
                         >
+
                         <?= htmlspecialchars($nom) ?>
+
                     </label>
+
                 </div>
 
             <?php endforeach; ?>
 
         </div>
 
-        <div class="actions-dialog">
+        <div class="nmw-dialog-actions">
 
             <button
                 type="button"
-                class="btn-cancel"
+                class="nmw-btn-cancel"
                 onclick="fermerModification()"
             >
                 Annuler
@@ -354,7 +481,7 @@ $benevoles = API::get("/api/benevoles");
 
             <button
                 type="submit"
-                class="btn-save"
+                class="nmw-btn-save"
             >
                 Enregistrer
             </button>
@@ -367,13 +494,26 @@ $benevoles = API::get("/api/benevoles");
 
 <script>
 function ouvrirModification(benevole) {
-    document.getElementById("id_utilisateur").value = benevole.id_utilisateur;
-    document.getElementById("nom").value = benevole.nom ?? "";
-    document.getElementById("prenom").value = benevole.prenom ?? "";
-    document.getElementById("email").value = benevole.email ?? "";
-    document.getElementById("telephone").value = benevole.telephone ?? "";
-    document.getElementById("ville").value = benevole.ville ?? "";
-    document.getElementById("actif").checked = benevole.actif === true;
+    document.getElementById("id_utilisateur").value =
+        benevole.id_utilisateur ?? "";
+
+    document.getElementById("nom").value =
+        benevole.nom ?? "";
+
+    document.getElementById("prenom").value =
+        benevole.prenom ?? "";
+
+    document.getElementById("email").value =
+        benevole.email ?? "";
+
+    document.getElementById("telephone").value =
+        benevole.telephone ?? "";
+
+    document.getElementById("ville").value =
+        benevole.ville ?? "";
+
+    document.getElementById("actif").checked =
+        benevole.actif === true;
 
     const checkboxes = document.querySelectorAll(
         '#editDialog input[name="competences[]"]'
@@ -382,18 +522,24 @@ function ouvrirModification(benevole) {
     checkboxes.forEach(function(checkbox) {
         checkbox.checked = false;
 
-        if (benevole.competences?.includes(checkbox.dataset.nom)) {
+        if (
+            Array.isArray(benevole.competences) &&
+            benevole.competences.includes(checkbox.dataset.nom)
+        ) {
             checkbox.checked = true;
         }
     });
 
-    document.getElementById("editDialog").showModal();
+    document
+        .getElementById("editDialog")
+        .showModal();
 }
 
 function fermerModification() {
-    document.getElementById("editDialog").close();
+    document
+        .getElementById("editDialog")
+        .close();
 }
 </script>
 
-</body>
-</html>
+<?php include __DIR__ . "/../includes/footer.php"; ?>

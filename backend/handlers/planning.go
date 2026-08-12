@@ -85,6 +85,7 @@ func ExportPlanning(w http.ResponseWriter, r *http.Request) {
 			&codePostal,
 			&statut,
 		)
+
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -139,7 +140,11 @@ func ExportPlanning(w http.ResponseWriter, r *http.Request) {
 	)
 
 	if err := f.Write(w); err != nil {
-		http.Error(w, "Erreur génération Excel", http.StatusInternalServerError)
+		http.Error(
+			w,
+			"Erreur génération Excel",
+			http.StatusInternalServerError,
+		)
 		return
 	}
 }
