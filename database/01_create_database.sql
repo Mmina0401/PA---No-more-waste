@@ -1,3 +1,5 @@
+SET NAMES utf8mb4;
+
 DROP DATABASE IF EXISTS no_more_waste;
 
 CREATE DATABASE no_more_waste

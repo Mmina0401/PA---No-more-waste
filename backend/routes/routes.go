@@ -17,6 +17,9 @@ func RegisterRoutes() {
 	http.HandleFunc("/api/public/demande-collecte", handlers.DemanderCollectePublique)
 	http.HandleFunc("/api/public/candidature-benevole", handlers.CandidaterBenevole)
 
+	// ---------- Espace bénévole ----------
+	http.HandleFunc("/api/benevole/planning", auth.VerifierRole("BENEVOLE")(handlers.GetPlanningBenevole))
+
 	// ---------- Utilisateurs / commerçants ----------
 	http.HandleFunc("/api/utilisateurs", auth.VerifierConnexion(handlers.GetUtilisateurs))
 	http.HandleFunc("/api/utilisateurs/get", auth.VerifierConnexion(handlers.GetUtilisateur))

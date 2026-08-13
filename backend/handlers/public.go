@@ -24,13 +24,21 @@ type ServicePublic struct {
 }
 
 // trouverOuCreerVisiteur cherche un compte par email, et en crée un léger
-// (rôle VISITEUR) s'il n'existe pas encore. Réutilisé par toutes les
-// actions publiques qui ont besoin de relier une action à un compte.
-func trouverOuCreerVisiteur(nom, prenom, email string) (int, error) {
+// (rôle VISITEUR) s'il n'existe pas encore. Les infos professionnelles sont
+// optionnelles : elles sont enregistrées si fournies, même pour un simple
+// visiteur (utile pour distinguer un commerçant qui n'est pas encore adhérent).
+func trouverOuCreerVisiteur(nom, prenom, email string, raisonSociale, siret, secteurActivite *string) (int, error) {
 
 	var idUtilisateur int
 	err := config.DB.QueryRow(`SELECT id_utilisateur FROM utilisateur WHERE email = ?`, email).Scan(&idUtilisateur)
 	if err == nil {
+		// Compte déjà existant : on complète ses infos pro si elles viennent d'être données.
+		if raisonSociale != nil || siret != nil {
+			config.DB.Exec(`
+				UPDATE utilisateur SET raison_sociale = ?, siret = ?, secteur_activite = ?
+				WHERE id_utilisateur = ?
+			`, raisonSociale, siret, secteurActivite, idUtilisateur)
+		}
 		return idUtilisateur, nil
 	}
 
@@ -41,9 +49,10 @@ func trouverOuCreerVisiteur(nom, prenom, email string) (int, error) {
 	}
 
 	resultat, errCreation := config.DB.Exec(`
-		INSERT INTO utilisateur (nom, prenom, email, mot_de_passe, role)
-		VALUES (?, ?, ?, ?, 'VISITEUR')
-	`, nom, prenom, email, string(hash))
+		INSERT INTO utilisateur (nom, prenom, email, mot_de_passe, role, raison_sociale, siret, secteur_activite)
+		VALUES (?, ?, ?, ?, 'VISITEUR', ?, ?, ?)
+	`, nom, prenom, email, string(hash), raisonSociale, siret, secteurActivite)
+
 	if errCreation != nil {
 		return 0, errCreation
 	}
@@ -120,7 +129,7 @@ func InscrirePublique(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	idUtilisateur, err := trouverOuCreerVisiteur(demande.Nom, demande.Prenom, demande.Email)
+	idUtilisateur, err := trouverOuCreerVisiteur(demande.Nom, demande.Prenom, demande.Email, nil, nil, nil)
 	if err != nil {
 		http.Error(w, "impossible de créer le compte visiteur", http.StatusInternalServerError)
 		return
@@ -161,6 +170,8 @@ func InscrirePublique(w http.ResponseWriter, r *http.Request) {
 // DemanderCollectePublique permet à un commerçant ou un particulier, sans
 // compte, de demander le passage d'un camion. Un compte "VISITEUR" léger
 // est créé automatiquement pour lui (comme pour l'inscription à un service).
+// Les 3 champs professionnels sont facultatifs : renseignés uniquement si
+// la personne s'est déclarée commerçant sur le formulaire.
 // POST /api/public/demande-collecte
 func DemanderCollectePublique(w http.ResponseWriter, r *http.Request) {
 
@@ -172,16 +183,19 @@ func DemanderCollectePublique(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var demande struct {
-		Nom          string `json:"nom"`
-		Prenom       string `json:"prenom"`
-		Email        string `json:"email"`
-		Adresse      string `json:"adresse"`
-		Ville        string `json:"ville"`
-		CodePostal   string `json:"code_postal"`
-		DateCollecte string `json:"date_collecte"`
-		HeureDebut   string `json:"heure_debut"`
-		HeureFin     string `json:"heure_fin"`
-		Commentaire  string `json:"commentaire"`
+		Nom             string  `json:"nom"`
+		Prenom          string  `json:"prenom"`
+		Email           string  `json:"email"`
+		Adresse         string  `json:"adresse"`
+		Ville           string  `json:"ville"`
+		CodePostal      string  `json:"code_postal"`
+		DateCollecte    string  `json:"date_collecte"`
+		HeureDebut      string  `json:"heure_debut"`
+		HeureFin        string  `json:"heure_fin"`
+		Commentaire     string  `json:"commentaire"`
+		RaisonSociale   *string `json:"raison_sociale"`
+		Siret           *string `json:"siret"`
+		SecteurActivite *string `json:"secteur_activite"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&demande); err != nil {
 		http.Error(w, "JSON invalide", http.StatusBadRequest)
@@ -194,7 +208,7 @@ func DemanderCollectePublique(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	idUtilisateur, err := trouverOuCreerVisiteur(demande.Nom, demande.Prenom, demande.Email)
+	idUtilisateur, err := trouverOuCreerVisiteur(demande.Nom, demande.Prenom, demande.Email, demande.RaisonSociale, demande.Siret, demande.SecteurActivite)
 	if err != nil {
 		http.Error(w, "impossible de créer le compte visiteur", http.StatusInternalServerError)
 		return

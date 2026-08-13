@@ -18,6 +18,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             "nom"            => $candidat["nom"],
             "prenom"         => $candidat["prenom"],
             "email"          => $candidat["email"],
+            "telephone"      => $candidat["telephone"] ?? null,
+            "adresse"        => $candidat["adresse"] ?? null,
+            "ville"          => $candidat["ville"] ?? null,
+            "code_postal"    => $candidat["code_postal"] ?? null,
             "role"           => "BENEVOLE",
             "actif"          => true,
         ]);

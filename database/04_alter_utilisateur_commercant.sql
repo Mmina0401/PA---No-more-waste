@@ -1,3 +1,4 @@
+SET NAMES utf8mb4;
 USE no_more_waste;
 ALTER TABLE utilisateur
     ADD COLUMN raison_sociale VARCHAR(150) NULL,

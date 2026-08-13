@@ -6,5 +6,10 @@ if (!isset($_SESSION["utilisateur"])) {
     exit;
 }
 
+if (($_SESSION["utilisateur"]["role"] ?? "") === "BENEVOLE") {
+    header("Location: /benevole/index.php");
+    exit;
+}
+
 header("Location: dashboard.php");
 exit;
