@@ -44,6 +44,7 @@ VALUES
 
 ('Admin','NoMoreWaste','admin@nomorewaste.fr','admin123','ADMIN'),
 ('Martin','Paul','paul@nomorewaste.fr','password','BENEVOLE'),
+('Parekh','Aditya','aditya@nomorewaste.fr','password','BENEVOLE'),
 ('Durand','Sophie','sophie@nomorewaste.fr','password','RESPONSABLE'),
 ('Carrefour','Nantes','carrefour@nomorewaste.fr','password','COMMERCANT');
 

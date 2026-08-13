@@ -1,5 +1,9 @@
+<?php
+require_once __DIR__ . "/../includes/lang.php";
+?>
+
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="<?= htmlspecialchars($_SESSION["lang"] ?? "fr") ?>">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -55,7 +59,11 @@ h1, h2, h3, .titre-nmw {
     font-weight: 600;
     padding: 10px 20px;
 }
-.btn-principal:hover { background: #245e28; color: var(--blanc); }
+
+.btn-principal:hover {
+    background: #245e28;
+    color: var(--blanc);
+}
 
 .btn-secondaire {
     background: var(--bleu-planete);
@@ -65,11 +73,16 @@ h1, h2, h3, .titre-nmw {
     font-weight: 600;
     padding: 10px 20px;
 }
-.btn-secondaire:hover { background: #1f5f78; color: var(--blanc); }
+
+.btn-secondaire:hover {
+    background: #1f5f78;
+    color: var(--blanc);
+}
 
 .navbar-nmw {
     background: var(--vert-foret) !important;
 }
+
 .navbar-nmw .nav-link,
 .navbar-nmw .navbar-brand {
     color: var(--blanc) !important;
@@ -81,20 +94,52 @@ h1, h2, h3, .titre-nmw {
     font-weight: 600;
     border-radius: 999px;
 }
+
+.lang-btn {
+    min-width: 42px;
+}
 </style>
 </head>
+
 <body>
 
 <nav class="navbar navbar-expand-lg navbar-nmw shadow-sm">
+
 <div class="container-fluid">
+
 <a class="navbar-brand fw-bold" href="accueil.php">
-<i class="fa-solid fa-leaf"></i> No More Waste
+<i class="fa-solid fa-leaf"></i>
+No More Waste
 </a>
-<div class="d-flex gap-2 flex-wrap">
-<a href="services.php" class="btn btn-sm btn-outline-light">Services</a>
-<a href="demande-collecte.php" class="btn btn-sm btn-outline-light">Demander une collecte</a>
-<a href="candidature-benevole.php" class="btn btn-sm btn-outline-light">Devenir bénévole</a>
-<a href="/login.php" class="btn btn-sm badge-jaune">Espace membre</a>
+
+<div class="d-flex gap-2 flex-wrap align-items-center">
+
+<a href="services.php" class="btn btn-sm btn-outline-light">
+<?= t("services") ?>
+</a>
+
+<a href="demande-collecte.php" class="btn btn-sm btn-outline-light">
+<?= t("collection_request") ?>
+</a>
+
+<a href="candidature-benevole.php" class="btn btn-sm btn-outline-light">
+<?= t("volunteer") ?>
+</a>
+
+<a href="/login.php" class="btn btn-sm badge-jaune">
+<?= t("member_area") ?>
+</a>
+
+<a href="?lang=fr" class="btn btn-sm btn-outline-light lang-btn">
+FR
+</a>
+
+<a href="?lang=en" class="btn btn-sm btn-outline-light lang-btn">
+EN
+</a>
+
 </div>
+
 </div>
+
 </nav>

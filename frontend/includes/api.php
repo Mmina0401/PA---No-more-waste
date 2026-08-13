@@ -4,8 +4,6 @@ class API
 {
     private static $baseURLCalculee = "";
 
-    // Détermine l'adresse de l'API : celle définie par Docker si elle existe,
-    // sinon l'adresse locale habituelle (sans Docker).
     private static function baseURL()
     {
         if (self::$baseURLCalculee !== "") {
@@ -23,23 +21,20 @@ class API
         return self::$baseURLCalculee;
     }
 
-    // Construit les en-têtes envoyés à chaque appel : le type de contenu,
-    // et en plus le jeton de connexion si la personne est connectée
-    // (stocké en session lors de la connexion, voir login.php).
     private static function enTetes()
     {
         $enTetes = ["Content-Type: application/json"];
+
         if (isset($_SESSION["jeton"])) {
             $enTetes[] = "Authorization: Bearer " . $_SESSION["jeton"];
         }
+
         return $enTetes;
     }
 
     public static function get($endpoint)
     {
-        $url = self::baseURL() . $endpoint;
-
-        $ch = curl_init($url);
+        $ch = curl_init(self::baseURL() . $endpoint);
 
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_HTTPGET, true);
@@ -47,20 +42,22 @@ class API
 
         $response = curl_exec($ch);
 
-        if (curl_errno($ch)) {
+        if ($response === false) {
             return [];
         }
 
-        curl_close($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
+        if ($httpCode < 200 || $httpCode >= 300) {
+            return [];
+        }
 
         return json_decode($response, true);
     }
 
     public static function post($endpoint, $data)
     {
-        $url = self::baseURL() . $endpoint;
-
-        $ch = curl_init($url);
+        $ch = curl_init(self::baseURL() . $endpoint);
 
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_POST, true);
@@ -69,7 +66,63 @@ class API
 
         $response = curl_exec($ch);
 
-        curl_close($ch);
+        if ($response === false) {
+            return [];
+        }
+
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
+        if ($httpCode < 200 || $httpCode >= 300) {
+            return [];
+        }
+
+        return json_decode($response, true);
+    }
+
+    public static function put($endpoint, $data)
+    {
+        $ch = curl_init(self::baseURL() . $endpoint);
+
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
+        curl_setopt($ch, CURLOPT_HTTPHEADER, self::enTetes());
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+
+        $response = curl_exec($ch);
+
+        if ($response === false) {
+            return [];
+        }
+
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
+        if ($httpCode < 200 || $httpCode >= 300) {
+            return [];
+        }
+
+        return json_decode($response, true);
+    }
+
+    public static function delete($endpoint, $data)
+    {
+        $ch = curl_init(self::baseURL() . $endpoint);
+
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");
+        curl_setopt($ch, CURLOPT_HTTPHEADER, self::enTetes());
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+
+        $response = curl_exec($ch);
+
+        if ($response === false) {
+            return [];
+        }
+
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
+        if ($httpCode < 200 || $httpCode >= 300) {
+            return [];
+        }
 
         return json_decode($response, true);
     }

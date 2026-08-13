@@ -3,11 +3,13 @@ $elementsMenu = [
     ["href" => "../dashboard.php",          "icone" => "fa-house",          "texte" => "Dashboard"],
     ["href" => "../commercants/index.php",  "icone" => "fa-shop",           "texte" => "Commerçants"],
     ["href" => "../candidatures/index.php", "icone" => "fa-user-plus",      "texte" => "Candidatures"],
+    ["href" => "/benevoles/index.php",      "icone" => "fa-people-group",  "texte" => "Bénévoles"],
     ["href" => "../collectes/index.php",    "icone" => "fa-truck",          "texte" => "Collectes"],
     ["href" => "../tournees/index.php",     "icone" => "fa-route",          "texte" => "Tournées"],
     ["href" => "../services/index.php",     "icone" => "fa-calendar-days",  "texte" => "Services"],
     ["href" => "../stocks/index.php",       "icone" => "fa-box",            "texte" => "Stocks"],
     ["href" => "../rappels/index.php",      "icone" => "fa-bell",           "texte" => "Rappels"],
+    ["href" => "/planning/export.php", "icone" => "fa-file-excel", "texte" => "Export Excel"],
     ["href" => "../pdf",                    "icone" => "fa-file-pdf",       "texte" => "PDF"],
 ];
 ?>

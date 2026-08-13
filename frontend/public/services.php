@@ -1,39 +1,39 @@
 <?php
 session_start();
+
 require_once __DIR__ . "/../includes/api.php";
+require_once __DIR__ . "/../includes/lang.php";
 
 $messageSucces = null;
 $messageErreur = null;
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $reponse = API::post("/api/public/inscription", [
-        "nom"        => trim($_POST["nom"]),
-        "prenom"     => trim($_POST["prenom"]),
-        "email"      => trim($_POST["email"]),
-        "id_service" => (int) $_POST["id_service"],
+        "nom"        => trim($_POST["nom"] ?? ""),
+        "prenom"     => trim($_POST["prenom"] ?? ""),
+        "email"      => trim($_POST["email"] ?? ""),
+        "id_service" => (int) ($_POST["id_service"] ?? 0),
     ]);
 
     if (isset($reponse["message"])) {
-        $messageSucces = "Inscription enregistrée ! Vous recevrez une confirmation.";
+        $messageSucces = t("services_success");
     } else {
-        $messageErreur = "Impossible de vous inscrire (service complet, ou vous êtes déjà inscrit).";
+        $messageErreur = t("services_error");
     }
 }
 
 $services = API::get("/api/public/services");
-if (!is_array($services)) $services = [];
+if (!is_array($services)) {
+    $services = [];
+}
 
-/*
- * Correction d'affichage uniquement : certaines anciennes données peuvent
- * avoir été enregistrées avec un double encodage UTF-8 (ex. RÃ©paration).
- * La donnée en base n'est jamais modifiée.
- */
 function nmwTexteAffichage($valeur)
 {
     $texte = (string) ($valeur ?? "");
 
     if ($texte !== "" && (str_contains($texte, "Ã") || str_contains($texte, "Â"))) {
         $corrige = @iconv("UTF-8", "Windows-1252//IGNORE", $texte);
+
         if ($corrige !== false && $corrige !== "") {
             return $corrige;
         }
@@ -44,7 +44,9 @@ function nmwTexteAffichage($valeur)
 
 function nmwDateAffichage($valeur)
 {
-    if (!$valeur) return "Date à confirmer";
+    if (!$valeur) {
+        return t("date_to_confirm");
+    }
 
     $date = substr((string) $valeur, 0, 10);
     $morceaux = explode("-", $date);
@@ -54,21 +56,22 @@ function nmwDateAffichage($valeur)
     }
 
     $mois = [
-        "01" => "janvier",
-        "02" => "février",
-        "03" => "mars",
-        "04" => "avril",
-        "05" => "mai",
-        "06" => "juin",
-        "07" => "juillet",
-        "08" => "août",
-        "09" => "septembre",
-        "10" => "octobre",
-        "11" => "novembre",
-        "12" => "décembre",
+        "01" => t("month_january"),
+        "02" => t("month_february"),
+        "03" => t("month_march"),
+        "04" => t("month_april"),
+        "05" => t("month_may"),
+        "06" => t("month_june"),
+        "07" => t("month_july"),
+        "08" => t("month_august"),
+        "09" => t("month_september"),
+        "10" => t("month_october"),
+        "11" => t("month_november"),
+        "12" => t("month_december"),
     ];
 
     [$annee, $numeroMois, $jour] = $morceaux;
+
     return (int) $jour . " " . ($mois[$numeroMois] ?? $numeroMois) . " " . $annee;
 }
 
@@ -141,7 +144,15 @@ body {
     border: 1px solid rgba(255,255,255,.20);
 }
 
-.nmw-member-btn {
+.nmw-nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.nmw-member-btn,
+.nmw-lang-btn {
     display: inline-flex;
     align-items: center;
     gap: 8px;
@@ -154,7 +165,16 @@ body {
     transition: .2s ease;
 }
 
-.nmw-member-btn:hover {
+.nmw-lang-btn {
+    min-width: 44px;
+    justify-content: center;
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+.nmw-member-btn:hover,
+.nmw-lang-btn:hover,
+.nmw-lang-btn.active {
     color: var(--nmw-vert-foret);
     background: #fff;
     border-color: #fff;
@@ -463,10 +483,21 @@ body {
             <span class="nmw-brand-mark"><i class="fa-solid fa-leaf"></i></span>
             <span>No More Waste</span>
         </a>
-        <a href="/login.php" class="nmw-member-btn">
-            <i class="fa-regular fa-user"></i>
-            <span>Espace membre</span>
-        </a>
+
+        <div class="nmw-nav-actions">
+            <a href="/login.php" class="nmw-member-btn">
+                <i class="fa-regular fa-user"></i>
+                <span><?= t("member_area") ?></span>
+            </a>
+
+            <a href="?lang=fr" class="nmw-lang-btn <?= ($_SESSION["lang"] ?? "fr") === "fr" ? "active" : "" ?>">
+                FR
+            </a>
+
+            <a href="?lang=en" class="nmw-lang-btn <?= ($_SESSION["lang"] ?? "fr") === "en" ? "active" : "" ?>">
+                EN
+            </a>
+        </div>
     </div>
 </nav>
 
@@ -476,76 +507,107 @@ body {
 <section class="nmw-services-hero">
     <div class="nmw-eyebrow">
         <i class="fa-solid fa-seedling"></i>
-        Agir ensemble
+        <?= t("services_eyebrow") ?>
     </div>
-    <h1 class="nmw-services-title">Nos services <span>solidaires</span></h1>
-    <p class="nmw-services-intro">Découvrez les prochains ateliers proposés par No More Waste et inscrivez-vous simplement, sans créer de compte.</p>
+
+    <h1 class="nmw-services-title">
+        <?= t("services_title_1") ?> <span><?= t("services_title_2") ?></span>
+    </h1>
+
+    <p class="nmw-services-intro">
+        <?= t("services_intro") ?>
+    </p>
+
     <div class="nmw-hero-note">
         <i class="fa-solid fa-circle-check"></i>
-        Inscription gratuite et rapide
+        <?= t("services_free_registration") ?>
     </div>
 </section>
 
 <?php if ($messageSucces): ?>
     <div class="alert alert-success nmw-alert">
-        <i class="fa-solid fa-circle-check me-2"></i><?= htmlspecialchars($messageSucces, ENT_QUOTES, 'UTF-8') ?>
+        <i class="fa-solid fa-circle-check me-2"></i>
+        <?= htmlspecialchars($messageSucces, ENT_QUOTES, 'UTF-8') ?>
     </div>
 <?php endif; ?>
+
 <?php if ($messageErreur): ?>
     <div class="alert alert-danger nmw-alert">
-        <i class="fa-solid fa-circle-exclamation me-2"></i><?= htmlspecialchars($messageErreur, ENT_QUOTES, 'UTF-8') ?>
+        <i class="fa-solid fa-circle-exclamation me-2"></i>
+        <?= htmlspecialchars($messageErreur, ENT_QUOTES, 'UTF-8') ?>
     </div>
 <?php endif; ?>
 
 <?php if (empty($services)): ?>
+
     <div class="nmw-empty">
         <i class="fa-regular fa-calendar"></i>
-        <strong class="d-block mb-1">Aucun service ouvert pour le moment</strong>
-        <span>De nouveaux ateliers seront bientôt proposés.</span>
+        <strong class="d-block mb-1"><?= t("services_empty_title") ?></strong>
+        <span><?= t("services_empty_text") ?></span>
     </div>
+
 <?php else: ?>
 
 <div class="row g-4">
+
 <?php foreach ($services as $s):
     $nomService = nmwTexteAffichage($s["nom"] ?? "");
     $descriptionService = nmwTexteAffichage($s["description"] ?? "");
-    $lieuService = nmwTexteAffichage($s["lieu"] ?? "Lieu à confirmer");
+    $lieuService = nmwTexteAffichage($s["lieu"] ?? t("place_to_confirm"));
     $dateService = nmwDateAffichage($s["date_service"] ?? null);
     $heureDebut = substr((string) ($s["heure_debut"] ?? ""), 0, 5);
     $heureFin = substr((string) ($s["heure_fin"] ?? ""), 0, 5);
     $capaciteMax = isset($s["capacite_max"]) && $s["capacite_max"] !== null ? (int) $s["capacite_max"] : null;
     $nbInscrits = (int) ($s["nb_inscrits"] ?? 0);
 ?>
+
 <div class="col-12 col-md-6 col-xl-4">
     <article class="nmw-service-card">
         <div class="nmw-service-card-body">
+
             <div class="nmw-service-topline">
-                <span class="nmw-service-icon"><i class="fa-solid fa-hands-helping"></i></span>
-                <span class="nmw-service-badge">Service solidaire</span>
+                <span class="nmw-service-icon">
+                    <i class="fa-solid fa-hands-helping"></i>
+                </span>
+
+                <span class="nmw-service-badge">
+                    <?= t("services_solidarity_badge") ?>
+                </span>
             </div>
 
-            <h2 class="nmw-service-name"><?= htmlspecialchars($nomService, ENT_QUOTES, 'UTF-8') ?></h2>
-            <p class="nmw-service-description"><?= htmlspecialchars($descriptionService, ENT_QUOTES, 'UTF-8') ?></p>
+            <h2 class="nmw-service-name">
+                <?= htmlspecialchars($nomService, ENT_QUOTES, 'UTF-8') ?>
+            </h2>
+
+            <p class="nmw-service-description">
+                <?= htmlspecialchars($descriptionService, ENT_QUOTES, 'UTF-8') ?>
+            </p>
 
             <div class="nmw-service-meta">
                 <div class="nmw-meta-row">
                     <i class="fa-solid fa-location-dot"></i>
                     <span><?= htmlspecialchars($lieuService, ENT_QUOTES, 'UTF-8') ?></span>
                 </div>
+
                 <div class="nmw-meta-row">
                     <i class="fa-regular fa-calendar"></i>
                     <span><?= htmlspecialchars($dateService, ENT_QUOTES, 'UTF-8') ?></span>
                 </div>
+
                 <div class="nmw-meta-row">
                     <i class="fa-regular fa-clock"></i>
-                    <span><?= htmlspecialchars($heureDebut, ENT_QUOTES, 'UTF-8') ?><?= $heureFin !== "" ? " – " . htmlspecialchars($heureFin, ENT_QUOTES, 'UTF-8') : "" ?></span>
+                    <span>
+                        <?= htmlspecialchars($heureDebut, ENT_QUOTES, 'UTF-8') ?>
+                        <?= $heureFin !== "" ? " – " . htmlspecialchars($heureFin, ENT_QUOTES, 'UTF-8') : "" ?>
+                    </span>
                 </div>
             </div>
 
             <?php if ($capaciteMax !== null): ?>
                 <div class="nmw-capacity">
                     <i class="fa-solid fa-users"></i>
-                    <?= $nbInscrits ?> / <?= $capaciteMax ?> participant<?= $capaciteMax > 1 ? "s" : "" ?>
+                    <?= $nbInscrits ?> / <?= $capaciteMax ?>
+                    <?= $capaciteMax > 1 ? t("participants_plural") : t("participant_singular") ?>
                 </div>
             <?php endif; ?>
 
@@ -556,13 +618,16 @@ body {
                 data-bs-target="#modalInscription"
                 onclick="choisirService(<?= (int) $s["id_service"] ?>, <?= htmlspecialchars(json_encode($nomService, JSON_UNESCAPED_UNICODE), ENT_QUOTES, 'UTF-8') ?>)"
             >
-                <span>S'inscrire</span>
+                <span><?= t("services_register") ?></span>
                 <i class="fa-solid fa-arrow-right"></i>
             </button>
+
         </div>
     </article>
 </div>
+
 <?php endforeach; ?>
+
 </div>
 
 <?php endif; ?>
@@ -573,30 +638,52 @@ body {
 <div class="modal fade nmw-modal" id="modalInscription" tabindex="-1">
 <div class="modal-dialog modal-dialog-centered">
 <div class="modal-content">
+
 <form method="post">
+
 <div class="modal-header">
-<h5 class="modal-title">S'inscrire à <span id="nomServiceChoisi"></span></h5>
-<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+    <h5 class="modal-title">
+        <?= t("services_modal_title") ?>
+        <span id="nomServiceChoisi"></span>
+    </h5>
+
+    <button
+        type="button"
+        class="btn-close"
+        data-bs-dismiss="modal"
+        aria-label="<?= htmlspecialchars(t("close"), ENT_QUOTES, 'UTF-8') ?>"
+    ></button>
 </div>
+
 <div class="modal-body">
+
 <input type="hidden" name="id_service" id="idServiceChoisi">
+
 <div class="mb-3">
-<label class="form-label">Prénom</label>
-<input type="text" name="prenom" class="form-control" required>
+    <label class="form-label"><?= t("first_name") ?></label>
+    <input type="text" name="prenom" class="form-control" required>
 </div>
+
 <div class="mb-3">
-<label class="form-label">Nom</label>
-<input type="text" name="nom" class="form-control" required>
+    <label class="form-label"><?= t("last_name") ?></label>
+    <input type="text" name="nom" class="form-control" required>
 </div>
+
 <div class="mb-0">
-<label class="form-label">Email</label>
-<input type="email" name="email" class="form-control" required>
+    <label class="form-label"><?= t("email") ?></label>
+    <input type="email" name="email" class="form-control" required>
 </div>
+
 </div>
+
 <div class="modal-footer">
-<button type="submit" class="nmw-modal-submit">Confirmer l'inscription</button>
+    <button type="submit" class="nmw-modal-submit">
+        <?= t("services_confirm_registration") ?>
+    </button>
 </div>
+
 </form>
+
 </div>
 </div>
 </div>

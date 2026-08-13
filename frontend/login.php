@@ -5,7 +5,7 @@ require_once __DIR__ . "/includes/api.php";
 function destinationApresConnexion($role)
 {
     if ($role === "BENEVOLE") {
-        return "/benevole/index.php";
+        return "/benevole/dashboard.php";
     }
 
     return "/dashboard.php";

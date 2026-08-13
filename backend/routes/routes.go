@@ -9,7 +9,7 @@ import (
 
 func RegisterRoutes() {
 
-	// ---------- Publique (pas besoin d'être connecté) ----------
+	// ---------- Publique ----------
 	http.HandleFunc("/api/test", handlers.TestHandler)
 	http.HandleFunc("/api/auth/login", auth.Connexion)
 	http.HandleFunc("/api/public/services", handlers.ObtenirServicesPublics)
@@ -18,7 +18,37 @@ func RegisterRoutes() {
 	http.HandleFunc("/api/public/candidature-benevole", handlers.CandidaterBenevole)
 
 	// ---------- Espace bénévole ----------
-	http.HandleFunc("/api/benevole/planning", auth.VerifierRole("BENEVOLE")(handlers.GetPlanningBenevole))
+	http.HandleFunc(
+		"/api/benevole/planning",
+		auth.VerifierRole("BENEVOLE")(handlers.GetPlanningBenevole),
+	)
+
+	// ---------- Gestion des bénévoles ----------
+	http.HandleFunc(
+		"/api/benevoles",
+		auth.VerifierRole("ADMIN", "RESPONSABLE")(handlers.GetBenevoles),
+	)
+
+	http.HandleFunc(
+		"/api/benevoles/update",
+		auth.VerifierRole("ADMIN", "RESPONSABLE")(handlers.UpdateBenevole),
+	)
+
+	http.HandleFunc(
+		"/api/benevoles/delete",
+		auth.VerifierRole("ADMIN", "RESPONSABLE")(handlers.DeleteBenevole),
+	)
+
+	http.HandleFunc(
+		"/api/benevoles/disponibilites",
+		auth.VerifierRole("ADMIN", "RESPONSABLE")(handlers.AddDisponibiliteBenevole),
+	)
+
+	// ---------- Planning Excel ----------
+	http.HandleFunc(
+		"/api/planning/export",
+		auth.VerifierRole("ADMIN", "RESPONSABLE")(handlers.ExportPlanning),
+	)
 
 	// ---------- Utilisateurs / commerçants ----------
 	http.HandleFunc("/api/utilisateurs", auth.VerifierConnexion(handlers.GetUtilisateurs))
@@ -33,7 +63,7 @@ func RegisterRoutes() {
 	http.HandleFunc("/api/adhesions/update", auth.VerifierRole("ADMIN", "RESPONSABLE")(handlers.UpdateAdhesion))
 	http.HandleFunc("/api/adhesions/delete", auth.VerifierRole("ADMIN", "RESPONSABLE")(handlers.DeleteAdhesion))
 
-	// ---------- Rappels de renouvellement ----------
+	// ---------- Rappels ----------
 	http.HandleFunc("/api/rappels/a-envoyer", auth.VerifierRole("ADMIN", "RESPONSABLE")(handlers.ObtenirAdhesionsARelancer))
 	http.HandleFunc("/api/rappels/marquer", auth.VerifierRole("ADMIN", "RESPONSABLE")(handlers.MarquerRappelEnvoye))
 
@@ -51,6 +81,7 @@ func RegisterRoutes() {
 
 	// ---------- Collectes ----------
 	http.HandleFunc("/api/collectes", auth.VerifierConnexion(handlers.GetCollectes))
+	http.HandleFunc("/api/collectes/get", auth.VerifierConnexion(handlers.GetCollecte))
 	http.HandleFunc("/api/collectes/create", auth.VerifierRole("ADMIN", "RESPONSABLE")(handlers.CreateCollecte))
 	http.HandleFunc("/api/collectes/update", auth.VerifierRole("ADMIN", "RESPONSABLE")(handlers.UpdateCollecte))
 	http.HandleFunc("/api/collectes/delete", auth.VerifierRole("ADMIN", "RESPONSABLE")(handlers.DeleteCollecte))
@@ -88,7 +119,7 @@ func RegisterRoutes() {
 	http.HandleFunc("/api/inscriptions/update", auth.VerifierRole("ADMIN", "RESPONSABLE")(handlers.UpdateInscription))
 	http.HandleFunc("/api/inscriptions/delete", auth.VerifierRole("ADMIN", "RESPONSABLE")(handlers.DeleteInscription))
 
-	// ---------- Tournées (livraisons) ----------
+	// ---------- Tournées ----------
 	http.HandleFunc("/api/livraisons", auth.VerifierConnexion(handlers.GetLivraisons))
 	http.HandleFunc("/api/livraisons/get", auth.VerifierConnexion(handlers.GetLivraison))
 	http.HandleFunc("/api/livraisons/create", auth.VerifierRole("ADMIN", "RESPONSABLE")(handlers.CreateLivraison))
@@ -101,4 +132,32 @@ func RegisterRoutes() {
 
 	http.HandleFunc("/api/associations", auth.VerifierConnexion(handlers.GetAssociations))
 	http.HandleFunc("/api/vehicules", auth.VerifierConnexion(handlers.GetVehicules))
+
+	http.HandleFunc("/api/livraisons/pdf", auth.VerifierConnexion(handlers.GenererPDFLivraison))
+
+	http.HandleFunc(
+		"/api/offres-benevoles",
+		auth.VerifierRole("ADMIN", "RESPONSABLE", "BENEVOLE")(handlers.GetOffresBenevoles),
+	)
+
+	http.HandleFunc(
+		"/api/offres-benevoles/create",
+		auth.VerifierRole("ADMIN", "RESPONSABLE")(handlers.CreateOffreBenevole),
+	)
+
+	http.HandleFunc(
+		"/api/offres-benevoles/repondre",
+		auth.VerifierRole("BENEVOLE")(handlers.RepondreOffreBenevole),
+	)
+
+	http.HandleFunc(
+		"/api/offres-benevoles/reponses",
+		auth.VerifierRole("ADMIN", "RESPONSABLE")(handlers.GetReponsesOffreBenevole),
+	)
+
+	http.HandleFunc(
+		"/api/offres-benevoles/mes-reponses",
+		auth.VerifierRole("BENEVOLE")(handlers.GetMesReponsesOffresBenevole),
+	)
+
 }

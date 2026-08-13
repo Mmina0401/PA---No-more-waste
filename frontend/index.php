@@ -7,9 +7,9 @@ if (!isset($_SESSION["utilisateur"])) {
 }
 
 if (($_SESSION["utilisateur"]["role"] ?? "") === "BENEVOLE") {
-    header("Location: /benevole/index.php");
+    header("Location: /benevole/dashboard.php");
     exit;
 }
 
-header("Location: dashboard.php");
+header("Location: /dashboard.php");
 exit;
