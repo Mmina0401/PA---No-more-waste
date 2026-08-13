@@ -29,6 +29,11 @@ type JourOffre struct {
 func CreateOffreBenevole(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
+	if r.Method != http.MethodPost {
+		http.Error(w, "Méthode non autorisée", http.StatusMethodNotAllowed)
+		return
+	}
+
 	var data struct {
 		TypeEvenement         string `json:"type_evenement"`
 		IDEvenement           int    `json:"id_evenement"`
@@ -42,13 +47,17 @@ func CreateOffreBenevole(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if data.TypeEvenement != "COLLECTE" {
-		http.Error(w, "Seules les offres de collecte sont gérées ici pour le moment", http.StatusBadRequest)
+	if data.TypeEvenement != "COLLECTE" && data.TypeEvenement != "SERVICE" {
+		http.Error(
+			w,
+			"Le type d'événement doit être COLLECTE ou SERVICE",
+			http.StatusBadRequest,
+		)
 		return
 	}
 
 	if data.IDEvenement <= 0 {
-		http.Error(w, "Collecte invalide", http.StatusBadRequest)
+		http.Error(w, "Événement invalide", http.StatusBadRequest)
 		return
 	}
 
@@ -58,56 +67,119 @@ func CreateOffreBenevole(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if data.NombreBenevolesRequis <= 0 {
-		http.Error(w, "Le nombre de bénévoles requis doit être supérieur à 0", http.StatusBadRequest)
+		http.Error(
+			w,
+			"Le nombre de bénévoles requis doit être supérieur à 0",
+			http.StatusBadRequest,
+		)
 		return
 	}
 
-	var dateCollecte string
+	var dateEvenement string
 	var heureDebut string
 	var heureFin string
-	var statutCollecte string
+	var statutEvenement string
 
-	err := config.DB.QueryRow(`
-		SELECT
-			DATE_FORMAT(date_collecte, '%Y-%m-%d'),
-			TIME_FORMAT(heure_debut, '%H:%i'),
-			TIME_FORMAT(heure_fin, '%H:%i'),
-			statut
-		FROM collecte
-		WHERE id_collecte = ?
-	`,
-		data.IDEvenement,
-	).Scan(
-		&dateCollecte,
-		&heureDebut,
-		&heureFin,
-		&statutCollecte,
-	)
+	if data.TypeEvenement == "COLLECTE" {
+		err := config.DB.QueryRow(`
+			SELECT
+				DATE_FORMAT(date_collecte, '%Y-%m-%d'),
+				TIME_FORMAT(heure_debut, '%H:%i'),
+				TIME_FORMAT(heure_fin, '%H:%i'),
+				statut
+			FROM collecte
+			WHERE id_collecte = ?
+		`, data.IDEvenement).Scan(
+			&dateEvenement,
+			&heureDebut,
+			&heureFin,
+			&statutEvenement,
+		)
 
-	if err != nil {
-		http.Error(w, "Collecte introuvable", http.StatusNotFound)
+		if err != nil {
+			http.Error(w, "Collecte introuvable", http.StatusNotFound)
+			return
+		}
+
+		if statutEvenement == "ANNULEE" ||
+			statutEvenement == "TERMINEE" {
+			http.Error(
+				w,
+				"Cette collecte ne peut plus recevoir d'offre bénévole",
+				http.StatusBadRequest,
+			)
+			return
+		}
+	}
+
+	if data.TypeEvenement == "SERVICE" {
+		err := config.DB.QueryRow(`
+			SELECT
+				DATE_FORMAT(date_service, '%Y-%m-%d'),
+				TIME_FORMAT(heure_debut, '%H:%i'),
+				TIME_FORMAT(heure_fin, '%H:%i'),
+				statut
+			FROM service
+			WHERE id_service = ?
+		`, data.IDEvenement).Scan(
+			&dateEvenement,
+			&heureDebut,
+			&heureFin,
+			&statutEvenement,
+		)
+
+		if err != nil {
+			http.Error(w, "Service introuvable", http.StatusNotFound)
+			return
+		}
+
+		if statutEvenement == "ANNULE" {
+			http.Error(
+				w,
+				"Ce service ne peut plus recevoir d'offre bénévole",
+				http.StatusBadRequest,
+			)
+			return
+		}
+	}
+
+	if dateEvenement == "" {
+		http.Error(
+			w,
+			"La date de l'événement est obligatoire",
+			http.StatusBadRequest,
+		)
 		return
 	}
 
-	if dateCollecte < time.Now().Format("2006-01-02") {
-		http.Error(w, "Impossible de créer une offre pour une collecte passée", http.StatusBadRequest)
+	if heureDebut == "" || heureFin == "" {
+		http.Error(
+			w,
+			"Les horaires de l'événement sont obligatoires",
+			http.StatusBadRequest,
+		)
 		return
 	}
 
-	if statutCollecte == "ANNULEE" || statutCollecte == "TERMINEE" {
-		http.Error(w, "Cette collecte ne peut plus recevoir d'offre bénévole", http.StatusBadRequest)
+	if dateEvenement < time.Now().Format("2006-01-02") {
+		http.Error(
+			w,
+			"Impossible de créer une offre pour un événement passé",
+			http.StatusBadRequest,
+		)
 		return
 	}
 
 	var existe int
 
-	err = config.DB.QueryRow(`
+	err := config.DB.QueryRow(`
 		SELECT COUNT(*)
 		FROM offre_benevole
-		WHERE type_evenement = 'COLLECTE'
+		WHERE type_evenement = ?
 		AND id_evenement = ?
 		AND statut = 'OUVERTE'
 	`,
+		data.TypeEvenement,
 		data.IDEvenement,
 	).Scan(&existe)
 
@@ -117,11 +189,16 @@ func CreateOffreBenevole(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if existe > 0 {
-		http.Error(w, "Une offre ouverte existe déjà pour cette collecte", http.StatusConflict)
+		http.Error(
+			w,
+			"Une offre ouverte existe déjà pour cet événement",
+			http.StatusConflict,
+		)
 		return
 	}
 
 	tx, err := config.DB.Begin()
+
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -139,17 +216,9 @@ func CreateOffreBenevole(w http.ResponseWriter, r *http.Request) {
 			heure_fin,
 			statut
 		)
-		VALUES (
-			'COLLECTE',
-			?,
-			?,
-			?,
-			?,
-			?,
-			?,
-			'OUVERTE'
-		)
+		VALUES (?, ?, ?, ?, ?, ?, ?, 'OUVERTE')
 	`,
+		data.TypeEvenement,
 		data.IDEvenement,
 		data.Titre,
 		data.Description,
@@ -165,6 +234,7 @@ func CreateOffreBenevole(w http.ResponseWriter, r *http.Request) {
 	}
 
 	idOffre, err := resultat.LastInsertId()
+
 	if err != nil {
 		tx.Rollback()
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -173,11 +243,14 @@ func CreateOffreBenevole(w http.ResponseWriter, r *http.Request) {
 
 	_, err = tx.Exec(`
 		INSERT INTO offre_benevole_jour
-		(id_offre, date_jour)
+		(
+			id_offre,
+			date_jour
+		)
 		VALUES (?, ?)
 	`,
 		idOffre,
-		dateCollecte,
+		dateEvenement,
 	)
 
 	if err != nil {
@@ -192,8 +265,10 @@ func CreateOffreBenevole(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"message":  "Offre bénévole créée avec succès",
-		"id_offre": idOffre,
+		"message":        "Offre bénévole créée avec succès",
+		"id_offre":       idOffre,
+		"type_evenement": data.TypeEvenement,
+		"id_evenement":   data.IDEvenement,
 	})
 }
 
