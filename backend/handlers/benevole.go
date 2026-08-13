@@ -48,7 +48,14 @@ func GetBenevoles(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	rows, err := config.DB.Query(`
-		SELECT id_utilisateur, nom, prenom, email, telephone, ville, actif
+		SELECT
+			id_utilisateur,
+			nom,
+			prenom,
+			email,
+			telephone,
+			ville,
+			actif
 		FROM utilisateur
 		WHERE role = 'BENEVOLE'
 		ORDER BY nom, prenom
@@ -104,6 +111,7 @@ func GetBenevoles(w http.ResponseWriter, r *http.Request) {
 		}
 
 		competenceRows.Close()
+
 		benevoles = append(benevoles, b)
 	}
 
@@ -140,7 +148,11 @@ func UpdateBenevole(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if data.Nom == "" || data.Prenom == "" || data.Email == "" {
-		http.Error(w, "Nom, prénom et email obligatoires", http.StatusBadRequest)
+		http.Error(
+			w,
+			"Nom, prénom et email obligatoires",
+			http.StatusBadRequest,
+		)
 		return
 	}
 
@@ -152,8 +164,15 @@ func UpdateBenevole(w http.ResponseWriter, r *http.Request) {
 
 	_, err = tx.Exec(`
 		UPDATE utilisateur
-		SET nom = ?, prenom = ?, email = ?, telephone = ?, ville = ?, actif = ?
-		WHERE id_utilisateur = ? AND role = 'BENEVOLE'
+		SET
+			nom = ?,
+			prenom = ?,
+			email = ?,
+			telephone = ?,
+			ville = ?,
+			actif = ?
+		WHERE id_utilisateur = ?
+		AND role = 'BENEVOLE'
 	`,
 		data.Nom,
 		data.Prenom,
@@ -184,7 +203,10 @@ func UpdateBenevole(w http.ResponseWriter, r *http.Request) {
 			INSERT INTO benevole_competence
 			(id_utilisateur, id_competence)
 			VALUES (?, ?)
-		`, data.IDUtilisateur, idCompetence)
+		`,
+			data.IDUtilisateur,
+			idCompetence,
+		)
 		if err != nil {
 			tx.Rollback()
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -199,6 +221,103 @@ func UpdateBenevole(w http.ResponseWriter, r *http.Request) {
 
 	json.NewEncoder(w).Encode(map[string]string{
 		"message": "Bénévole mis à jour avec succès",
+	})
+}
+
+func DeleteBenevole(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	var data struct {
+		IDUtilisateur int `json:"id_utilisateur"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
+		http.Error(w, "Données invalides", http.StatusBadRequest)
+		return
+	}
+
+	if data.IDUtilisateur <= 0 {
+		http.Error(w, "Identifiant invalide", http.StatusBadRequest)
+		return
+	}
+
+	tx, err := config.DB.Begin()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	_, err = tx.Exec(`
+		DELETE FROM benevole_competence
+		WHERE id_utilisateur = ?
+	`, data.IDUtilisateur)
+	if err != nil {
+		tx.Rollback()
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	_, err = tx.Exec(`
+		DELETE FROM disponibilite_benevole
+		WHERE id_utilisateur = ?
+	`, data.IDUtilisateur)
+	if err != nil {
+		tx.Rollback()
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	_, err = tx.Exec(`
+		DELETE FROM collecte_benevole
+		WHERE id_utilisateur = ?
+	`, data.IDUtilisateur)
+	if err != nil {
+		tx.Rollback()
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	_, err = tx.Exec(`
+		DELETE FROM inscription_service
+		WHERE id_utilisateur = ?
+	`, data.IDUtilisateur)
+	if err != nil {
+		tx.Rollback()
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	resultat, err := tx.Exec(`
+		DELETE FROM utilisateur
+		WHERE id_utilisateur = ?
+		AND role = 'BENEVOLE'
+	`, data.IDUtilisateur)
+	if err != nil {
+		tx.Rollback()
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	nbLignes, err := resultat.RowsAffected()
+	if err != nil {
+		tx.Rollback()
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if nbLignes == 0 {
+		tx.Rollback()
+		http.Error(w, "Bénévole introuvable", http.StatusNotFound)
+		return
+	}
+
+	if err := tx.Commit(); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(map[string]string{
+		"message": "Bénévole supprimé avec succès",
 	})
 }
 
@@ -224,9 +343,19 @@ func AddDisponibiliteBenevole(w http.ResponseWriter, r *http.Request) {
 
 	_, err := config.DB.Exec(`
 		INSERT INTO disponibilite_benevole
-		(id_utilisateur, date_disponibilite, heure_debut, heure_fin)
+		(
+			id_utilisateur,
+			date_disponibilite,
+			heure_debut,
+			heure_fin
+		)
 		VALUES (?, ?, ?, ?)
-	`, data.IDUtilisateur, data.DateDisponibilite, data.HeureDebut, data.HeureFin)
+	`,
+		data.IDUtilisateur,
+		data.DateDisponibilite,
+		data.HeureDebut,
+		data.HeureFin,
+	)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -241,12 +370,14 @@ func GetPlanningBenevole(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	informations := auth.RecupererInformationsConnecte(r)
+
 	if informations == nil {
 		http.Error(w, "connexion requise", http.StatusUnauthorized)
 		return
 	}
 
 	collectes := []MissionCollecteBenevole{}
+
 	rows, err := config.DB.Query(`
 		SELECT
 			c.id_collecte,
@@ -261,7 +392,8 @@ func GetPlanningBenevole(w http.ResponseWriter, r *http.Request) {
 			COALESCE(TIME_FORMAT(cb.heure_arrivee, '%H:%i'), ''),
 			COALESCE(TIME_FORMAT(cb.heure_depart, '%H:%i'), '')
 		FROM collecte_benevole cb
-		JOIN collecte c ON c.id_collecte = cb.id_collecte
+		JOIN collecte c
+			ON c.id_collecte = cb.id_collecte
 		WHERE cb.id_utilisateur = ?
 		ORDER BY c.date_collecte ASC, c.heure_debut ASC
 	`, informations.IDUtilisateur)
@@ -272,6 +404,7 @@ func GetPlanningBenevole(w http.ResponseWriter, r *http.Request) {
 
 	for rows.Next() {
 		var mission MissionCollecteBenevole
+
 		if err := rows.Scan(
 			&mission.IDCollecte,
 			&mission.DateCollecte,
@@ -289,11 +422,14 @@ func GetPlanningBenevole(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+
 		collectes = append(collectes, mission)
 	}
+
 	rows.Close()
 
 	services := []ServiceBenevole{}
+
 	rowsServices, err := config.DB.Query(`
 		SELECT
 			s.id_service,
@@ -305,7 +441,8 @@ func GetPlanningBenevole(w http.ResponseWriter, r *http.Request) {
 			s.statut,
 			i.statut
 		FROM inscription_service i
-		JOIN service s ON s.id_service = i.id_service
+		JOIN service s
+			ON s.id_service = i.id_service
 		WHERE i.id_utilisateur = ?
 		AND i.statut != 'ANNULE'
 		ORDER BY s.date_service ASC, s.heure_debut ASC
@@ -318,6 +455,7 @@ func GetPlanningBenevole(w http.ResponseWriter, r *http.Request) {
 
 	for rowsServices.Next() {
 		var service ServiceBenevole
+
 		if err := rowsServices.Scan(
 			&service.IDService,
 			&service.Nom,
@@ -331,6 +469,7 @@ func GetPlanningBenevole(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+
 		services = append(services, service)
 	}
 
