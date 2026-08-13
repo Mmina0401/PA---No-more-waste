@@ -3,7 +3,7 @@ $elementsMenu = [
     ["href" => "../dashboard.php",          "icone" => "fa-house",          "texte" => "Dashboard"],
     ["href" => "../commercants/index.php",  "icone" => "fa-shop",           "texte" => "Commerçants"],
     ["href" => "../candidatures/index.php", "icone" => "fa-user-plus",      "texte" => "Candidatures"],
-    ["href" => "/benevoles/index.php",      "icone" => "fa-people-group",  "texte" => "Bénévoles"],
+    ["href" => "/benevole/gestion.php",      "icone" => "fa-people-group",  "texte" => "Bénévoles"],
     ["href" => "../collectes/index.php",    "icone" => "fa-truck",          "texte" => "Collectes"],
     ["href" => "../tournees/index.php",     "icone" => "fa-route",          "texte" => "Tournées"],
     ["href" => "../services/index.php",     "icone" => "fa-calendar-days",  "texte" => "Services"],
