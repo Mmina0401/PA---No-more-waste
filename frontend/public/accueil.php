@@ -256,6 +256,11 @@ body {
     background: rgba(185, 227, 243, .45);
 }
 
+.adherent .nmw-icon-wrap {
+    color: #8a6a00;
+    background: rgba(242, 201, 76, .28);
+}
+
 .benevole .nmw-icon-wrap {
     color: #417C39;
     background: rgba(123, 201, 111, .23);
@@ -455,7 +460,7 @@ body {
 
 <div class="row g-4">
 
-<div class="col-lg-4 col-md-6">
+<div class="col-lg-3 col-md-6">
 
 <article class="nmw-card services">
 
@@ -490,7 +495,7 @@ body {
 
 </div>
 
-<div class="col-lg-4 col-md-6">
+<div class="col-lg-3 col-md-6">
 
 <article class="nmw-card collecte">
 
@@ -525,7 +530,53 @@ body {
 
 </div>
 
-<div class="col-lg-4 col-md-6 mx-md-auto mx-lg-0">
+<div class="col-lg-3 col-md-6">
+
+<article class="nmw-card adherent">
+
+<div class="nmw-icon-wrap">
+    <i class="fa-solid fa-id-card"></i>
+</div>
+
+<span class="nmw-card-label">
+    Adhésion annuelle
+</span>
+
+<h3>
+    Devenir adhérent
+</h3>
+
+<p>
+    Vous êtes commerçant ? Adhérez à No More Waste pour accéder aux services proposés par l'association.
+</p>
+
+<?php if ($role === "COMMERCANT"): ?>
+
+<a
+    href="/commercant/dashboard.php"
+    class="nmw-btn nmw-btn-primary"
+>
+    <span>Mon espace adhérent</span>
+    <i class="fa-solid fa-arrow-right"></i>
+</a>
+
+<?php else: ?>
+
+<a
+    href="/public/devenir-adherent.php"
+    class="nmw-btn nmw-btn-primary"
+>
+    <span>Demander une adhésion</span>
+    <i class="fa-solid fa-arrow-right"></i>
+</a>
+
+<?php endif; ?>
+
+</article>
+
+</div>
+
+<div class="col-lg-3 col-md-6">
 
 <article class="nmw-card benevole">
 
@@ -580,14 +631,27 @@ body {
     <i class="fa-solid fa-arrow-right"></i>
 </a>
 
-<?php else: ?>
+<?php elseif (in_array($role, ["ADMIN", "RESPONSABLE"], true)): ?>
 
 <a
     href="/dashboard.php"
     class="nmw-btn nmw-btn-leaf"
 >
     <span>
-        Accéder à mon espace
+        Accéder au back-office
+    </span>
+
+    <i class="fa-solid fa-arrow-right"></i>
+</a>
+
+<?php else: ?>
+
+<a
+    href="/public/candidature-benevole.php"
+    class="nmw-btn nmw-btn-leaf"
+>
+    <span>
+        Devenir bénévole
     </span>
 
     <i class="fa-solid fa-arrow-right"></i>

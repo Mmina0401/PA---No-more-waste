@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/MMina040/PA-No-More-Waste/auth"
 	"github.com/MMina040/PA-No-More-Waste/config"
 )
 
@@ -26,7 +27,7 @@ type Service struct {
 	NbInscrits int `json:"nb_inscrits,omitempty"`
 }
 
-// InscriptionService relie un utilisateur (bénévole, adhérent...) à un service.
+// InscriptionService représente la participation d’un commerçant adhérent à un service.
 type InscriptionService struct {
 	IDService       int    `json:"id_service"`
 	IDUtilisateur   int    `json:"id_utilisateur"`
@@ -44,10 +45,12 @@ func GetServices(w http.ResponseWriter, r *http.Request) {
 		SELECT
 			s.id_service, s.nom, s.description, s.lieu, s.date_service,
 			s.heure_debut, s.heure_fin, s.capacite_max, s.statut,
-			COUNT(i.id_utilisateur) AS nb_inscrits
+			COUNT(CASE WHEN u.role = 'COMMERCANT' THEN 1 END) AS nb_inscrits
 		FROM service s
 		LEFT JOIN inscription_service i
 			ON i.id_service = s.id_service AND i.statut != 'ANNULE'
+		LEFT JOIN utilisateur u
+			ON u.id_utilisateur = i.id_utilisateur
 		GROUP BY s.id_service
 		ORDER BY s.date_service, s.heure_debut
 	`)
@@ -197,7 +200,7 @@ func DeleteService(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetInscriptions renvoie les inscriptions d'un service, avec le nom du
-// bénévole/adhérent inscrit (jointure sur utilisateur).
+// commerçant adhérent inscrit (jointure sur utilisateur).
 // /api/inscriptions?id_service=3
 func GetInscriptions(w http.ResponseWriter, r *http.Request) {
 
@@ -215,6 +218,7 @@ func GetInscriptions(w http.ResponseWriter, r *http.Request) {
 		FROM inscription_service i
 		JOIN utilisateur u ON u.id_utilisateur = i.id_utilisateur
 		WHERE i.id_service = ?
+		  AND u.role = 'COMMERCANT'
 		ORDER BY i.date_inscription
 	`, idService)
 	if err != nil {
@@ -259,17 +263,32 @@ func CreateInscription(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "id_service et id_utilisateur sont obligatoires", http.StatusBadRequest)
 		return
 	}
+
+	adherentActif, err := commercantAdherentActif(i.IDUtilisateur)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if !adherentActif {
+		http.Error(w, "ce commerçant ne possède pas d'adhésion active", http.StatusForbidden)
+		return
+	}
+
 	// Vérifie la capacité restante avant d'inscrire
 	var capaciteMax *int
 	var nbInscrits int
-	err := config.DB.QueryRow(`SELECT capacite_max FROM service WHERE id_service = ?`, i.IDService).Scan(&capaciteMax)
+	err = config.DB.QueryRow(`SELECT capacite_max FROM service WHERE id_service = ? AND statut = 'OUVERT'`, i.IDService).Scan(&capaciteMax)
 	if err != nil {
 		http.Error(w, "service introuvable", http.StatusNotFound)
 		return
 	}
 	config.DB.QueryRow(`
-		SELECT COUNT(*) FROM inscription_service
-		WHERE id_service = ? AND statut != 'ANNULE'
+		SELECT COUNT(*)
+		FROM inscription_service ins
+		JOIN utilisateur u ON u.id_utilisateur = ins.id_utilisateur
+		WHERE ins.id_service = ?
+		  AND ins.statut != 'ANNULE'
+		  AND u.role = 'COMMERCANT'
 	`, i.IDService).Scan(&nbInscrits)
 	if capaciteMax != nil && nbInscrits >= *capaciteMax {
 		http.Error(w, "ce service est complet", http.StatusConflict)
@@ -348,4 +367,86 @@ func DeleteInscription(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(map[string]string{"message": "Inscription supprimée"})
+}
+
+// InscrireAdherentService permet au commerçant connecté de s'inscrire lui-même.
+// L'inscription est refusée si son adhésion annuelle n'est pas active.
+func InscrireAdherentService(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	if r.Method != http.MethodPost {
+		http.Error(w, "méthode non autorisée", http.StatusMethodNotAllowed)
+		return
+	}
+
+	informations := auth.RecupererInformationsConnecte(r)
+	if informations == nil {
+		http.Error(w, "connexion requise", http.StatusUnauthorized)
+		return
+	}
+
+	var demande struct {
+		IDService int `json:"id_service"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&demande); err != nil {
+		http.Error(w, "JSON invalide", http.StatusBadRequest)
+		return
+	}
+	if demande.IDService <= 0 {
+		http.Error(w, "service invalide", http.StatusBadRequest)
+		return
+	}
+
+	adherentActif, err := commercantAdherentActif(informations.IDUtilisateur)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if !adherentActif {
+		http.Error(w, "une adhésion active est obligatoire pour profiter des services", http.StatusForbidden)
+		return
+	}
+
+	var capaciteMax *int
+	var nbInscrits int
+	err = config.DB.QueryRow(`
+		SELECT capacite_max
+		FROM service
+		WHERE id_service = ? AND statut = 'OUVERT'
+	`, demande.IDService).Scan(&capaciteMax)
+	if err != nil {
+		http.Error(w, "service introuvable ou fermé", http.StatusNotFound)
+		return
+	}
+
+	err = config.DB.QueryRow(`
+		SELECT COUNT(*)
+		FROM inscription_service ins
+		JOIN utilisateur u ON u.id_utilisateur = ins.id_utilisateur
+		WHERE ins.id_service = ?
+		  AND ins.statut != 'ANNULE'
+		  AND u.role = 'COMMERCANT'
+	`, demande.IDService).Scan(&nbInscrits)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if capaciteMax != nil && nbInscrits >= *capaciteMax {
+		http.Error(w, "ce service est complet", http.StatusConflict)
+		return
+	}
+
+	_, err = config.DB.Exec(`
+		INSERT INTO inscription_service (id_service, id_utilisateur, statut)
+		VALUES (?, ?, 'INSCRIT')
+	`, demande.IDService, informations.IDUtilisateur)
+	if err != nil {
+		http.Error(w, "vous êtes déjà inscrit à ce service", http.StatusConflict)
+		return
+	}
+
+	json.NewEncoder(w).Encode(map[string]string{
+		"message": "Inscription au service enregistrée",
+	})
 }

@@ -162,11 +162,25 @@ func Connexion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if role == "VISITEUR" {
+		w.WriteHeader(http.StatusForbidden)
+		json.NewEncoder(w).Encode(map[string]string{
+			"error":   "COMPTE_PUBLIC",
+			"message": "Ce compte technique est utilisé uniquement pour les demandes publiques.",
+		})
+		return
+	}
+
 	if !compteActif {
+		message := "Votre candidature bénévole est en attente de validation par un administrateur."
+		if role == "COMMERCANT" {
+			message = "Votre demande de compte commerçant est en attente de validation par un administrateur."
+		}
+
 		w.WriteHeader(http.StatusForbidden)
 		json.NewEncoder(w).Encode(map[string]string{
 			"error":   "COMPTE_EN_ATTENTE",
-			"message": "Votre candidature est en attente de validation par un responsable.",
+			"message": message,
 		})
 		return
 	}

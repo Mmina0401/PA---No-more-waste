@@ -26,16 +26,16 @@ type MissionCollecteBenevole struct {
 	HeureDepart  string `json:"heure_depart"`
 }
 
-// ServiceBenevole représente un service auquel le bénévole connecté est inscrit.
+// ServiceBenevole représente un service auquel le bénévole connecté est affecté.
 type ServiceBenevole struct {
-	IDService         int    `json:"id_service"`
-	Nom               string `json:"nom"`
-	Lieu              string `json:"lieu"`
-	DateService       string `json:"date_service"`
-	HeureDebut        string `json:"heure_debut"`
-	HeureFin          string `json:"heure_fin"`
-	StatutService     string `json:"statut_service"`
-	StatutInscription string `json:"statut_inscription"`
+	IDService     int    `json:"id_service"`
+	Nom           string `json:"nom"`
+	Lieu          string `json:"lieu"`
+	DateService   string `json:"date_service"`
+	HeureDebut    string `json:"heure_debut"`
+	HeureFin      string `json:"heure_fin"`
+	StatutService string `json:"statut_service"`
+	RoleService   string `json:"role_service"`
 }
 
 // GetPlanningBenevole renvoie uniquement les missions et inscriptions du
@@ -112,12 +112,11 @@ func GetPlanningBenevole(w http.ResponseWriter, r *http.Request) {
 			COALESCE(TIME_FORMAT(s.heure_debut, '%H:%i'), ''),
 			COALESCE(TIME_FORMAT(s.heure_fin, '%H:%i'), ''),
 			s.statut,
-			i.statut
-		FROM inscription_service i
+			sb.role_service
+		FROM service_benevole sb
 		JOIN service s
-			ON s.id_service = i.id_service
-		WHERE i.id_utilisateur = ?
-		AND i.statut != 'ANNULE'
+			ON s.id_service = sb.id_service
+		WHERE sb.id_utilisateur = ?
 		ORDER BY s.date_service ASC, s.heure_debut ASC
 	`, informations.IDUtilisateur)
 	if err != nil {
@@ -137,7 +136,7 @@ func GetPlanningBenevole(w http.ResponseWriter, r *http.Request) {
 			&service.HeureDebut,
 			&service.HeureFin,
 			&service.StatutService,
-			&service.StatutInscription,
+			&service.RoleService,
 		); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -399,7 +398,7 @@ func DeleteBenevole(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_, err = tx.Exec(`
-		DELETE FROM inscription_service
+		DELETE FROM service_benevole
 		WHERE id_utilisateur = ?
 	`, data.IDUtilisateur)
 	if err != nil {

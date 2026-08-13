@@ -1,25 +1,28 @@
 <?php
 session_start();
 
-include "../includes/header.php";
-include "../includes/navbar.php";
 require_once "../includes/api.php";
+
+$messageErreur = null;
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
-   $resultat = API::post("/api/stocks/create", [
-    "id_produit"  => (int) $_POST["id_produit"],
-    "quantite"    => (int) $_POST["quantite"],
-    "emplacement" => trim($_POST["emplacement"])
-]);
+    $resultat = API::post("/api/stocks/create", [
+        "id_produit"  => (int) $_POST["id_produit"],
+        "quantite"    => (int) $_POST["quantite"],
+        "emplacement" => trim($_POST["emplacement"])
+    ]);
 
-echo "<pre>";
-var_dump($resultat);
-echo "</pre>";
-exit;
+    if (isset($resultat["message"])) {
+        header("Location: index.php");
+        exit;
+    }
+
+    $messageErreur = "Impossible d'ajouter le stock.";
 }
 
-
+include "../includes/header.php";
+include "../includes/navbar.php";
 ?>
 
 <div class="container-fluid">
@@ -36,6 +39,12 @@ exit;
 
             <hr>
 
+            <?php if ($messageErreur): ?>
+                <div class="alert alert-danger">
+                    <?= htmlspecialchars($messageErreur) ?>
+                </div>
+            <?php endif; ?>
+
             <form method="post">
 
                 <div class="mb-3">
@@ -44,6 +53,7 @@ exit;
                         type="number"
                         name="id_produit"
                         class="form-control"
+                        min="1"
                         required
                     >
                 </div>
@@ -54,6 +64,7 @@ exit;
                         type="number"
                         name="quantite"
                         class="form-control"
+                        min="0"
                         required
                     >
                 </div>

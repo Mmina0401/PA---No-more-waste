@@ -92,10 +92,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && $offreSelectionnee) {
     }
 
     if ($typeEvenement === "SERVICE") {
-        $resultat = API::post("/api/inscriptions/create", [
+        $resultat = API::post("/api/service-benevoles/create", [
             "id_service" => $idEvenement,
             "id_utilisateur" => $idUtilisateur,
-            "statut" => "INSCRIT"
+            "role_service" => "BENEVOLE"
         ]);
 
         if (is_array($resultat) && isset($resultat["message"])) {
@@ -151,21 +151,18 @@ if ($typeEvenement === "COLLECTE") {
 }
 
 if ($typeEvenement === "SERVICE") {
-    $inscriptions = API::get("/api/inscriptions");
+    $serviceBenevoles = API::get(
+        "/api/service-benevoles?id_service=" . $idEvenement
+    );
 
-    if (!is_array($inscriptions)) {
-        $inscriptions = [];
+    if (!is_array($serviceBenevoles)) {
+        $serviceBenevoles = [];
     }
 
-    foreach ($inscriptions as $inscription) {
-        if (
-            (int) ($inscription["id_service"] ?? 0) === $idEvenement &&
-            ($inscription["statut"] ?? "") !== "ANNULE"
-        ) {
-            $affectations[
-                (int) ($inscription["id_utilisateur"] ?? 0)
-            ] = true;
-        }
+    foreach ($serviceBenevoles as $affectation) {
+        $affectations[
+            (int) ($affectation["id_utilisateur"] ?? 0)
+        ] = true;
     }
 }
 

@@ -1,12 +1,7 @@
 <?php
 session_start();
 require_once __DIR__ . "/includes/auth.php";
-exigerConnexion();
-
-if (($_SESSION["utilisateur"]["role"] ?? "") === "BENEVOLE") {
-    header("Location: /benevole/dashboard.php");
-    exit;
-}
+exigerRole("ADMIN", "RESPONSABLE");
 
 include "includes/header.php";
 include "includes/navbar.php";

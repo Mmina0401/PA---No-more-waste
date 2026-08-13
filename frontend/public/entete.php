@@ -1,5 +1,16 @@
 <?php
 require_once __DIR__ . "/../includes/lang.php";
+
+$roleEntete = strtoupper($_SESSION["utilisateur"]["role"] ?? "");
+$lienEspace = "/login.php";
+
+if ($roleEntete === "BENEVOLE") {
+    $lienEspace = "/benevole/dashboard.php";
+} elseif ($roleEntete === "COMMERCANT") {
+    $lienEspace = "/commercant/dashboard.php";
+} elseif (in_array($roleEntete, ["ADMIN", "RESPONSABLE"], true)) {
+    $lienEspace = "/dashboard.php";
+}
 ?>
 
 <!DOCTYPE html>
@@ -126,8 +137,12 @@ No More Waste
 <?= t("volunteer") ?>
 </a>
 
-<a href="/login.php" class="btn btn-sm badge-jaune">
-<?= t("member_area") ?>
+<a href="devenir-adherent.php" class="btn btn-sm btn-outline-light">
+Devenir adhérent
+</a>
+
+<a href="<?= htmlspecialchars($lienEspace) ?>" class="btn btn-sm badge-jaune">
+<?= $roleEntete === "COMMERCANT" ? "Mon espace adhérent" : t("member_area") ?>
 </a>
 
 <a href="?lang=fr" class="btn btn-sm btn-outline-light lang-btn">

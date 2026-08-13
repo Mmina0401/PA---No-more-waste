@@ -15,6 +15,10 @@ $fichiersSQL = [
     "database/03_insert_data.sql",
     "database/04_alter_utilisateur_commercant.sql",
     "database/05_ajout_role_visiteur.sql",
+    "database/06_benevoles.sql",
+    "database/07_offres_benevoles.sql",
+    "database/08_refonte_offres_collectes.sql",
+    "database/09_logique_adherents_services.sql",
 ];
 
 function ouvrirConnexionMySQL($hote, $port, $utilisateur, $motDePasse)

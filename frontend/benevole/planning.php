@@ -410,7 +410,7 @@ Aucun service planifié
 </h5>
 
 <p class="text-muted mb-0">
-Vous n'êtes actuellement inscrit à aucun service.
+Vous n'êtes actuellement affecté à aucun service.
 </p>
 
 </div>
@@ -441,11 +441,11 @@ Vous n'êtes actuellement inscrit à aucun service.
 ) ?>
 </h5>
 
-<?php if (!empty($service["statut_inscription"])): ?>
+<?php if (!empty($service["role_service"])): ?>
 
 <span class="badge bg-success align-self-start">
 <?= htmlspecialchars(
-    $service["statut_inscription"]
+    $service["role_service"]
 ) ?>
 </span>
 

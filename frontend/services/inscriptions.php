@@ -30,7 +30,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         if (isset($res["error"])) {
             $erreur = "Impossible d'inscrire cette personne (déjà inscrite ou service complet).";
         } else {
-            $notice = "Personne inscrite.";
+            $notice = "Adhérent inscrit.";
         }
 
     } elseif ($action === "confirmer") {
@@ -54,7 +54,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
 $service      = API::get("/api/services/get?id=" . urlencode($idService));
 $inscriptions = API::get("/api/inscriptions?id_service=" . urlencode($idService));
-$utilisateurs = API::get("/api/utilisateurs");
+$utilisateurs = API::get("/api/adherents");
 
 if (!is_array($inscriptions)) $inscriptions = [];
 if (!is_array($utilisateurs)) $utilisateurs = [];
@@ -78,7 +78,7 @@ $disponibles = array_filter($utilisateurs, fn($u) => !in_array($u["id_utilisateu
 <?php if ($notice): ?><div class="alert alert-success"><?= htmlspecialchars($notice) ?></div><?php endif; ?>
 <?php if ($erreur): ?><div class="alert alert-danger"><?= htmlspecialchars($erreur) ?></div><?php endif; ?>
 
-<h5>Inscrire une personne</h5>
+<h5>Inscrire un adhérent</h5>
 <form method="post" class="row g-2 align-items-end mb-4">
     <input type="hidden" name="action" value="inscrire">
 
@@ -88,7 +88,8 @@ $disponibles = array_filter($utilisateurs, fn($u) => !in_array($u["id_utilisateu
 
             <?php foreach ($disponibles as $u): ?>
             <option value="<?= $u["id_utilisateur"] ?>">
-                <?= htmlspecialchars($u["prenom"] . ' ' . $u["nom"]) ?> (<?= htmlspecialchars($u["role"]) ?>)
+                <?= htmlspecialchars(($u["raison_sociale"] ?? "") ?: ($u["prenom"] . ' ' . $u["nom"])) ?>
+                — adhésion jusqu'au <?= htmlspecialchars($u["date_fin"] ?? "") ?>
             </option>
             <?php endforeach; ?>
         </select>
@@ -103,7 +104,7 @@ $disponibles = array_filter($utilisateurs, fn($u) => !in_array($u["id_utilisateu
 
 <?php if (empty($inscriptions)): ?>
 
-    <div class="alert alert-light border">Personne n'est encore inscrit à ce service.</div>
+    <div class="alert alert-light border">Aucun adhérent n'est encore inscrit à ce service.</div>
 
 <?php else: ?>
 

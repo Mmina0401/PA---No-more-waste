@@ -6,10 +6,22 @@ if (!isset($_SESSION["utilisateur"])) {
     exit;
 }
 
-if (($_SESSION["utilisateur"]["role"] ?? "") === "BENEVOLE") {
+$role = $_SESSION["utilisateur"]["role"] ?? "";
+
+if ($role === "BENEVOLE") {
     header("Location: /benevole/dashboard.php");
     exit;
 }
 
-header("Location: /dashboard.php");
+if ($role === "COMMERCANT") {
+    header("Location: /commercant/dashboard.php");
+    exit;
+}
+
+if (in_array($role, ["ADMIN", "RESPONSABLE"], true)) {
+    header("Location: /dashboard.php");
+    exit;
+}
+
+header("Location: /public/accueil.php");
 exit;

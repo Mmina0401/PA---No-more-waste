@@ -64,7 +64,7 @@ return [
     "services_eyebrow" => "Act together",
     "services_title_1" => "Our community",
     "services_title_2" => "services",
-    "services_intro" => "Discover the upcoming workshops offered by No More Waste and register easily without creating an account.",
+    "services_intro" => "Discover the upcoming services offered by No More Waste. Registration is reserved for merchants with an active membership.",
     "services_free_registration" => "Free and quick registration",
     "services_empty_title" => "No services are currently open",
     "services_empty_text" => "New workshops will be available soon.",

@@ -126,4 +126,36 @@ class API
 
         return json_decode($response, true);
     }
+
+    public static function postAvecStatut($endpoint, $data)
+    {
+        $ch = curl_init(self::baseURL() . $endpoint);
+
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, self::enTetes());
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+
+        $response = curl_exec($ch);
+
+        if ($response === false) {
+            return [
+                "status" => 0,
+                "data" => ["error" => "API_INDISPONIBLE"]
+            ];
+        }
+
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $decoded = json_decode($response, true);
+
+        if (!is_array($decoded)) {
+            $decoded = ["error" => trim((string) $response)];
+        }
+
+        return [
+            "status" => $httpCode,
+            "data" => $decoded
+        ];
+    }
+
 }

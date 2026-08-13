@@ -8,7 +8,15 @@ function destinationApresConnexion($role)
         return "/benevole/dashboard.php";
     }
 
-    return "/dashboard.php";
+    if ($role === "COMMERCANT") {
+        return "/commercant/dashboard.php";
+    }
+
+    if (in_array($role, ["ADMIN", "RESPONSABLE"], true)) {
+        return "/dashboard.php";
+    }
+
+    return "/public/accueil.php";
 }
 
 // Si déjà connecté, rediriger vers l'espace correspondant au rôle.
@@ -21,12 +29,14 @@ $erreur = null;
 $attenteValidation = null;
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
-    $reponse = API::post("/api/auth/login", [
+    $appel = API::postAvecStatut("/api/auth/login", [
         "email"        => trim($_POST["email"]),
         "mot_de_passe" => $_POST["mot_de_passe"],
     ]);
+    $reponse = $appel["data"] ?? [];
 
     if (isset($reponse["jeton"])) {
+        session_regenerate_id(true);
         $_SESSION["jeton"]       = $reponse["jeton"];
         $_SESSION["utilisateur"] = $reponse["utilisateur"];
 
@@ -35,7 +45,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     }
 
     if (($reponse["error"] ?? "") === "COMPTE_EN_ATTENTE") {
-        $attenteValidation = $reponse["message"] ?? "Votre candidature est en attente de validation par un responsable.";
+        $attenteValidation = $reponse["message"] ?? "Votre compte est en attente de validation.";
     } else {
         $erreur = "Email ou mot de passe incorrect.";
     }
@@ -91,7 +101,7 @@ include __DIR__ . "/includes/header.php";
                     <div>
                         <strong>Candidature en attente de validation</strong>
                         <div class="mt-1"><?= htmlspecialchars($attenteValidation) ?></div>
-                        <small class="d-block mt-2">Vous pourrez vous connecter avec ce même email et ce même mot de passe dès qu'un responsable aura validé votre compte.</small>
+                        <small class="d-block mt-2">Vous pourrez vous connecter avec ce même email et ce même mot de passe dès qu'un administrateur aura validé votre compte.</small>
                     </div>
                 </div>
             </div>
@@ -117,6 +127,8 @@ include __DIR__ . "/includes/header.php";
             <a href="/public/accueil.php" class="text-decoration-none">← Retour à l'accueil</a>
             <span class="mx-2 text-muted">•</span>
             <a href="/public/candidature-benevole.php" class="text-decoration-none">Devenir bénévole</a>
+            <span class="mx-2 text-muted">•</span>
+            <a href="/public/devenir-adherent.php" class="text-decoration-none">Devenir adhérent</a>
         </div>
     </div>
 </div>

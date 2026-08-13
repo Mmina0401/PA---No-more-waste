@@ -13,8 +13,8 @@ func RegisterRoutes() {
 	http.HandleFunc("/api/test", handlers.TestHandler)
 	http.HandleFunc("/api/auth/login", auth.Connexion)
 	http.HandleFunc("/api/public/services", handlers.ObtenirServicesPublics)
-	http.HandleFunc("/api/public/inscription", handlers.InscrirePublique)
 	http.HandleFunc("/api/public/demande-collecte", handlers.DemanderCollectePublique)
+	http.HandleFunc("/api/public/devenir-adherent", handlers.DemanderAdhesionCommercant)
 	http.HandleFunc("/api/public/candidature-benevole", handlers.CandidaterBenevole)
 
 	// ---------- Espace bénévole ----------
@@ -62,6 +62,12 @@ func RegisterRoutes() {
 	http.HandleFunc("/api/adhesions/create", auth.VerifierRole("ADMIN", "RESPONSABLE")(handlers.CreateAdhesion))
 	http.HandleFunc("/api/adhesions/update", auth.VerifierRole("ADMIN", "RESPONSABLE")(handlers.UpdateAdhesion))
 	http.HandleFunc("/api/adhesions/delete", auth.VerifierRole("ADMIN", "RESPONSABLE")(handlers.DeleteAdhesion))
+
+	// ---------- Espace commerçant / adhérents ----------
+	http.HandleFunc("/api/commercant/espace", auth.VerifierRole("COMMERCANT")(handlers.GetEspaceCommercant))
+	http.HandleFunc("/api/adherents", auth.VerifierRole("ADMIN", "RESPONSABLE")(handlers.GetAdherentsActifs))
+	http.HandleFunc("/api/commercants/statut", auth.VerifierRole("ADMIN", "RESPONSABLE")(handlers.ChangerStatutCommercant))
+	http.HandleFunc("/api/adherent/services/inscription", auth.VerifierRole("COMMERCANT")(handlers.InscrireAdherentService))
 
 	// ---------- Rappels ----------
 	http.HandleFunc("/api/rappels/a-envoyer", auth.VerifierRole("ADMIN", "RESPONSABLE")(handlers.ObtenirAdhesionsARelancer))
@@ -118,6 +124,12 @@ func RegisterRoutes() {
 	http.HandleFunc("/api/inscriptions/create", auth.VerifierRole("ADMIN", "RESPONSABLE")(handlers.CreateInscription))
 	http.HandleFunc("/api/inscriptions/update", auth.VerifierRole("ADMIN", "RESPONSABLE")(handlers.UpdateInscription))
 	http.HandleFunc("/api/inscriptions/delete", auth.VerifierRole("ADMIN", "RESPONSABLE")(handlers.DeleteInscription))
+
+	// Les participants des services sont les adhérents commerçants.
+	// Les bénévoles qui animent/aident les services sont affectés séparément.
+	http.HandleFunc("/api/service-benevoles", auth.VerifierRole("ADMIN", "RESPONSABLE")(handlers.GetServiceBenevoles))
+	http.HandleFunc("/api/service-benevoles/create", auth.VerifierRole("ADMIN", "RESPONSABLE")(handlers.CreateServiceBenevole))
+	http.HandleFunc("/api/service-benevoles/delete", auth.VerifierRole("ADMIN", "RESPONSABLE")(handlers.DeleteServiceBenevole))
 
 	// ---------- Tournées ----------
 	http.HandleFunc("/api/livraisons", auth.VerifierConnexion(handlers.GetLivraisons))

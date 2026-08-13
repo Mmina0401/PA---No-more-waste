@@ -1,7 +1,7 @@
 <?php
 $elementsMenu = [
     ["href" => "../dashboard.php",          "icone" => "fa-house",          "texte" => "Dashboard"],
-    ["href" => "../commercants/index.php",  "icone" => "fa-shop",           "texte" => "Commerçants"],
+    ["href" => "../commercant/index.php",  "icone" => "fa-shop",           "texte" => "Commerçants"],
     ["href" => "../candidatures/index.php", "icone" => "fa-user-plus",      "texte" => "Candidatures"],
     ["href" => "/benevole/gestion.php",      "icone" => "fa-people-group",  "texte" => "Bénévoles"],
     ["href" => "../collectes/index.php",    "icone" => "fa-truck",          "texte" => "Collectes"],
@@ -10,7 +10,6 @@ $elementsMenu = [
     ["href" => "../stocks/index.php",       "icone" => "fa-box",            "texte" => "Stocks"],
     ["href" => "../rappels/index.php",      "icone" => "fa-bell",           "texte" => "Rappels"],
     ["href" => "/planning/export.php", "icone" => "fa-file-excel", "texte" => "Export Excel"],
-    ["href" => "../pdf",                    "icone" => "fa-file-pdf",       "texte" => "PDF"],
 ];
 ?>
 

@@ -10,25 +10,34 @@ $messageErreur = null;
 $utilisateur = $_SESSION["utilisateur"] ?? null;
 $estConnecte = isset($_SESSION["jeton"]) && is_array($utilisateur);
 $role = strtoupper($utilisateur["role"] ?? "");
+
 $estBenevole = $estConnecte && $role === "BENEVOLE";
+$estCommercant = $estConnecte && $role === "COMMERCANT";
 $estAdmin = $estConnecte && in_array($role, ["ADMIN", "RESPONSABLE"], true);
+
+$adhesionActive = false;
+
+if ($estCommercant) {
+    $espaceCommercant = API::get("/api/commercant/espace");
+    $adhesionActive = is_array($espaceCommercant)
+        && !empty($espaceCommercant["adhesion_active"]);
+}
 
 if (
     $_SERVER["REQUEST_METHOD"] === "POST" &&
     ($_POST["action"] ?? "") === "inscription_service"
 ) {
-    if (!$estBenevole) {
-        $messageErreur = "Vous devez être connecté avec un compte bénévole pour participer.";
+    if (!$estCommercant) {
+        $messageErreur = "Les services sont réservés aux commerçants adhérents.";
+    } elseif (!$adhesionActive) {
+        $messageErreur = "Votre adhésion annuelle doit être active pour vous inscrire à un service.";
     } else {
         $idService = (int) ($_POST["id_service"] ?? 0);
 
         if ($idService <= 0) {
             $messageErreur = "Service invalide.";
         } else {
-            $reponse = API::post("/api/public/inscription", [
-                "nom" => $utilisateur["nom"] ?? "",
-                "prenom" => $utilisateur["prenom"] ?? "",
-                "email" => $utilisateur["email"] ?? "",
+            $reponse = API::post("/api/adherent/services/inscription", [
                 "id_service" => $idService
             ]);
 
@@ -419,6 +428,13 @@ body {
     <span>Mon espace bénévole</span>
 </a>
 
+<?php elseif ($estCommercant): ?>
+
+<a href="/commercant/dashboard.php" class="nmw-member-btn">
+    <i class="fa-solid fa-shop"></i>
+    <span>Mon espace adhérent</span>
+</a>
+
 <?php else: ?>
 
 <a href="/dashboard.php" class="nmw-member-btn">
@@ -594,10 +610,10 @@ $serviceComplet = $capaciteMax !== null &&
     class="nmw-service-action blue"
 >
     <i class="fa-solid fa-right-to-bracket"></i>
-    Se connecter pour participer
+    Se connecter en tant qu'adhérent
 </a>
 
-<?php elseif ($estBenevole): ?>
+<?php elseif ($estCommercant && $adhesionActive): ?>
 
 <form method="post" class="mt-auto">
 
@@ -624,6 +640,26 @@ $serviceComplet = $capaciteMax !== null &&
 
 </form>
 
+<?php elseif ($estCommercant): ?>
+
+<a
+    href="/commercant/dashboard.php"
+    class="nmw-service-action gray"
+>
+    <i class="fa-solid fa-id-card"></i>
+    Adhésion active requise
+</a>
+
+<?php elseif ($estBenevole): ?>
+
+<a
+    href="/benevole/offres.php"
+    class="nmw-service-action blue"
+>
+    <i class="fa-solid fa-hand-holding-heart"></i>
+    Voir les missions bénévoles
+</a>
+
 <?php elseif ($estAdmin): ?>
 
 <a
@@ -633,6 +669,12 @@ $serviceComplet = $capaciteMax !== null &&
     <i class="fa-solid fa-gear"></i>
     Gérer les services
 </a>
+
+<?php else: ?>
+
+<button type="button" class="nmw-service-action gray" disabled>
+    Réservé aux adhérents
+</button>
 
 <?php endif; ?>
 

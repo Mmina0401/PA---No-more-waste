@@ -7,7 +7,11 @@ exigerRole("ADMIN", "RESPONSABLE");
 require_once "../includes/api.php";
 
 $id = $_GET["id"] ?? null;
-$c = ["nom" => "", "prenom" => "", "email" => "", "ville" => "", "raison_sociale" => "", "siret" => "", "secteur_activite" => "", "actif" => true];
+$c = [
+    "nom" => "", "prenom" => "", "email" => "", "telephone" => "",
+    "adresse" => "", "ville" => "", "code_postal" => "",
+    "raison_sociale" => "", "siret" => "", "secteur_activite" => "", "actif" => true
+];
 
 if ($id) {
     $c = API::get("/api/utilisateurs/get?id=" . $id);
@@ -23,7 +27,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         "nom"              => $_POST["nom"],
         "prenom"           => $_POST["prenom"],
         "email"            => $_POST["email"],
+        "telephone"        => $_POST["telephone"],
+        "adresse"          => $_POST["adresse"],
         "ville"            => $_POST["ville"],
+        "code_postal"      => $_POST["code_postal"],
         "role"             => "COMMERCANT",
         "raison_sociale"   => $_POST["raison_sociale"],
         "siret"            => $_POST["siret"],
@@ -71,7 +78,7 @@ value="<?= htmlspecialchars($c["raison_sociale"] ?? "") ?>">
 
 <div class="mb-3">
 <label class="form-label">SIRET</label>
-<input type="text" name="siret" class="form-control" required
+<input type="text" name="siret" class="form-control" required maxlength="14" pattern="[0-9]{14}"
 value="<?= htmlspecialchars($c["siret"] ?? "") ?>">
 </div>
 
@@ -107,9 +114,33 @@ value="<?= htmlspecialchars($c["email"] ?? "") ?>">
 <?php endif; ?>
 
 <div class="mb-3">
+<label class="form-label">Téléphone</label>
+<input type="text" name="telephone" class="form-control"
+value="<?= htmlspecialchars($c["telephone"] ?? "") ?>">
+</div>
+
+<div class="mb-3">
+<label class="form-label">Adresse</label>
+<input type="text" name="adresse" class="form-control"
+value="<?= htmlspecialchars($c["adresse"] ?? "") ?>">
+</div>
+
+<div class="row">
+<div class="col-md-8">
+<div class="mb-3">
 <label class="form-label">Ville</label>
 <input type="text" name="ville" class="form-control"
 value="<?= htmlspecialchars($c["ville"] ?? "") ?>">
+</div>
+</div>
+
+<div class="col-md-4">
+<div class="mb-3">
+<label class="form-label">Code postal</label>
+<input type="text" name="code_postal" class="form-control"
+value="<?= htmlspecialchars($c["code_postal"] ?? "") ?>">
+</div>
+</div>
 </div>
 
 <?php if ($id): ?>

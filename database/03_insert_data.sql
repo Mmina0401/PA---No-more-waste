@@ -65,8 +65,8 @@ INSERT INTO adhesion
 (id_utilisateur,date_debut,date_fin,montant,statut)
 
 VALUES
-(2,'2026-01-01','2027-01-01',10.00,'ACTIVE'),
-(3,'2026-02-15','2027-02-15',15.00,'ACTIVE');
+(5,'2025-01-01','2025-12-31',50.00,'EXPIREE'),
+(5,'2026-01-01','2026-12-31',50.00,'ACTIVE');
 
 /*insertion dans la table stock*/
 INSERT INTO stock
