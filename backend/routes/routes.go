@@ -23,6 +23,16 @@ func RegisterRoutes() {
 		auth.VerifierRole("BENEVOLE")(handlers.GetPlanningBenevole),
 	)
 
+	http.HandleFunc(
+		"/api/benevole/collecte/annuler",
+		auth.VerifierRole("BENEVOLE")(handlers.AnnulerParticipationCollecte),
+	)
+
+	http.HandleFunc(
+		"/api/benevole/service/annuler",
+		auth.VerifierRole("BENEVOLE")(handlers.AnnulerParticipationService),
+	)
+
 	// ---------- Gestion des bénévoles ----------
 	http.HandleFunc(
 		"/api/benevoles",

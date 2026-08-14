@@ -10,15 +10,17 @@ import (
 )
 
 type OffreBenevole struct {
-	IDOffre       int         `json:"id_offre"`
-	TypeEvenement string      `json:"type_evenement"`
-	IDEvenement   int         `json:"id_evenement"`
-	Titre         string      `json:"titre"`
-	Description   string      `json:"description"`
-	HeureDebut    string      `json:"heure_debut"`
-	HeureFin      string      `json:"heure_fin"`
-	Statut        string      `json:"statut"`
-	Jours         []JourOffre `json:"jours"`
+	IDOffre               int         `json:"id_offre"`
+	TypeEvenement         string      `json:"type_evenement"`
+	IDEvenement           int         `json:"id_evenement"`
+	Titre                 string      `json:"titre"`
+	Description           string      `json:"description"`
+	HeureDebut            string      `json:"heure_debut"`
+	HeureFin              string      `json:"heure_fin"`
+	Statut                string      `json:"statut"`
+	NombreBenevolesRequis int         `json:"nombre_benevoles_requis"`
+	NombreAffectes        int         `json:"nombre_affectes"`
+	Jours                 []JourOffre `json:"jours"`
 }
 
 type JourOffre struct {
@@ -277,16 +279,30 @@ func GetOffresBenevoles(w http.ResponseWriter, r *http.Request) {
 
 	rows, err := config.DB.Query(`
 		SELECT
-			id_offre,
-			type_evenement,
-			id_evenement,
-			titre,
-			COALESCE(description, ''),
-			TIME_FORMAT(heure_debut, '%H:%i'),
-			TIME_FORMAT(heure_fin, '%H:%i'),
-			statut
-		FROM offre_benevole
-		ORDER BY date_creation DESC
+			ob.id_offre,
+			ob.type_evenement,
+			ob.id_evenement,
+			ob.titre,
+			COALESCE(ob.description, ''),
+			TIME_FORMAT(ob.heure_debut, '%H:%i'),
+			TIME_FORMAT(ob.heure_fin, '%H:%i'),
+			ob.statut,
+			ob.nombre_benevoles_requis,
+			CASE
+				WHEN ob.type_evenement = 'COLLECTE' THEN (
+					SELECT COUNT(*)
+					FROM collecte_benevole cb
+					WHERE cb.id_collecte = ob.id_evenement
+				)
+				WHEN ob.type_evenement = 'SERVICE' THEN (
+					SELECT COUNT(*)
+					FROM service_benevole sb
+					WHERE sb.id_service = ob.id_evenement
+				)
+				ELSE 0
+			END AS nombre_affectes
+		FROM offre_benevole ob
+		ORDER BY ob.date_creation DESC
 	`)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -308,6 +324,8 @@ func GetOffresBenevoles(w http.ResponseWriter, r *http.Request) {
 			&offre.HeureDebut,
 			&offre.HeureFin,
 			&offre.Statut,
+			&offre.NombreBenevolesRequis,
+			&offre.NombreAffectes,
 		); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return

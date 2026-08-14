@@ -32,6 +32,10 @@ if (!$offreSelectionnee && $messageErreur === "") {
 $typeEvenement = $offreSelectionnee["type_evenement"] ?? "";
 $idEvenement = (int) ($offreSelectionnee["id_evenement"] ?? 0);
 
+$nombreBenevolesRequis = (int) ($offreSelectionnee["nombre_benevoles_requis"] ?? 0);
+$nombreAffectes = (int) ($offreSelectionnee["nombre_affectes"] ?? 0);
+$offreComplete = $nombreBenevolesRequis > 0 && $nombreAffectes >= $nombreBenevolesRequis;
+
 if ($_SERVER["REQUEST_METHOD"] === "POST" && $offreSelectionnee) {
     $idUtilisateur = (int) ($_POST["id_utilisateur"] ?? 0);
 
@@ -41,6 +45,16 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && $offreSelectionnee) {
             $idOffre .
             "&error=" .
             urlencode("Bénévole invalide.")
+        );
+        exit;
+    }
+
+    if ($offreComplete) {
+        header(
+            "Location: reponses.php?id=" .
+            $idOffre .
+            "&error=" .
+            urlencode("Cette offre est complète. Aucun bénévole supplémentaire ne peut être affecté.")
         );
         exit;
     }
@@ -165,6 +179,9 @@ if ($typeEvenement === "SERVICE") {
         ] = true;
     }
 }
+
+$nombreAffectes = count($affectations);
+$offreComplete = $nombreBenevolesRequis > 0 && $nombreAffectes >= $nombreBenevolesRequis;
 
 $reponsesParJour = [];
 
@@ -351,14 +368,28 @@ include __DIR__ . "/../includes/navbar.php";
             <?= $nbReponses ?>
             réponse<?= $nbReponses > 1 ? "s" : "" ?>
         </span>
+
+        <?php if ($nombreBenevolesRequis > 0): ?>
+        <span>
+            <i class="fa-solid fa-user-check me-1"></i>
+            <strong><?= $nombreAffectes ?> / <?= $nombreBenevolesRequis ?></strong>
+            affecté<?= $nombreAffectes > 1 ? "s" : "" ?>
+        </span>
+        <?php endif; ?>
     </div>
 </div>
 
+<?php if ($offreComplete): ?>
+<span class="badge bg-danger">
+    COMPLET
+</span>
+<?php else: ?>
 <span class="badge bg-success">
     <?= htmlspecialchars(
         $offreSelectionnee["statut"] ?? ""
     ) ?>
 </span>
+<?php endif; ?>
 
 </div>
 </div>
@@ -471,6 +502,13 @@ $estAffecte = isset($affectations[$idUtilisateur]);
 <span class="affecte">
     <i class="fa-solid fa-circle-check"></i>
     Affecté
+</span>
+
+<?php elseif ($offreComplete): ?>
+
+<span class="badge bg-danger">
+    <i class="fa-solid fa-ban me-1"></i>
+    Offre complète
 </span>
 
 <?php elseif ($typeEvenement === "COLLECTE"): ?>

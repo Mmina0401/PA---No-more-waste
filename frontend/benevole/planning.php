@@ -8,6 +8,87 @@ require_once __DIR__ . "/../includes/api.php";
 
 $utilisateur = $_SESSION["utilisateur"] ?? [];
 
+$messageSucces = $_GET["success"] ?? "";
+$messageErreur = $_GET["error"] ?? "";
+
+if (
+    $_SERVER["REQUEST_METHOD"] === "POST" &&
+    ($_POST["action"] ?? "") === "annuler_collecte"
+) {
+    $idCollecte = (int) ($_POST["id_collecte"] ?? 0);
+
+    if ($idCollecte <= 0) {
+        header(
+            "Location: /benevole/planning.php?error=" .
+            urlencode("Collecte invalide.")
+        );
+        exit;
+    }
+
+    $resultat = API::post(
+        "/api/benevole/collecte/annuler",
+        [
+            "id_collecte" => $idCollecte
+        ]
+    );
+
+    if (
+        is_array($resultat) &&
+        isset($resultat["message"])
+    ) {
+        header(
+            "Location: /benevole/planning.php?success=" .
+            urlencode("Votre participation à la collecte a été annulée.")
+        );
+        exit;
+    }
+
+    header(
+        "Location: /benevole/planning.php?error=" .
+        urlencode("Impossible d'annuler votre participation à cette collecte.")
+    );
+    exit;
+}
+
+if (
+    $_SERVER["REQUEST_METHOD"] === "POST" &&
+    ($_POST["action"] ?? "") === "annuler_service"
+) {
+    $idService = (int) ($_POST["id_service"] ?? 0);
+
+    if ($idService <= 0) {
+        header(
+            "Location: /benevole/planning.php?error=" .
+            urlencode("Service invalide.")
+        );
+        exit;
+    }
+
+    $resultat = API::post(
+        "/api/benevole/service/annuler",
+        [
+            "id_service" => $idService
+        ]
+    );
+
+    if (
+        is_array($resultat) &&
+        isset($resultat["message"])
+    ) {
+        header(
+            "Location: /benevole/planning.php?success=" .
+            urlencode("Votre participation au service a été annulée.")
+        );
+        exit;
+    }
+
+    header(
+        "Location: /benevole/planning.php?error=" .
+        urlencode("Impossible d'annuler votre participation à ce service.")
+    );
+    exit;
+}
+
 $planning = API::get("/api/benevole/planning");
 
 if (!is_array($planning)) {
@@ -80,6 +161,7 @@ body {
 
 .mission-icon {
     width: 50px;
+    min-width: 50px;
     height: 50px;
     border-radius: 14px;
     display: flex;
@@ -108,6 +190,17 @@ body {
     border: 1px dashed #cfd8dc;
     border-radius: 16px;
     background: #fafcfa;
+}
+
+.annulation-zone {
+    border-top: 1px solid #edf0ed;
+    margin-top: 14px;
+    padding-top: 14px;
+}
+
+.past-event {
+    font-size: 13px;
+    color: #909090;
 }
 </style>
 
@@ -200,9 +293,7 @@ body {
 </a>
 
 </div>
-
 </div>
-
 </nav>
 
 <main class="container planning-container py-5">
@@ -210,14 +301,32 @@ body {
 <div class="mb-4">
 
 <h1 class="fw-bold mb-2">
-Mon planning
+    Mon planning
 </h1>
 
 <p class="text-muted mb-0">
-Retrouvez les collectes et les services auxquels vous êtes affecté.
+    Retrouvez les collectes et les services auxquels vous êtes affecté.
 </p>
 
 </div>
+
+<?php if ($messageSucces): ?>
+
+<div class="alert alert-success">
+    <i class="fa-solid fa-circle-check me-2"></i>
+    <?= htmlspecialchars($messageSucces) ?>
+</div>
+
+<?php endif; ?>
+
+<?php if ($messageErreur): ?>
+
+<div class="alert alert-danger">
+    <i class="fa-solid fa-circle-exclamation me-2"></i>
+    <?= htmlspecialchars($messageErreur) ?>
+</div>
+
+<?php endif; ?>
 
 <div class="card planning-card mb-5">
 
@@ -228,17 +337,17 @@ Retrouvez les collectes et les services auxquels vous êtes affecté.
 <div>
 
 <h3 class="mb-1">
-Mes collectes
+    Mes collectes
 </h3>
 
 <p class="text-muted mb-0">
-Missions de collecte qui vous ont été attribuées.
+    Missions de collecte qui vous ont été attribuées.
 </p>
 
 </div>
 
 <span class="badge bg-primary fs-6">
-<?= count($collectes) ?>
+    <?= count($collectes) ?>
 </span>
 
 </div>
@@ -253,11 +362,11 @@ Missions de collecte qui vous ont été attribuées.
 ></i>
 
 <h5>
-Aucune collecte planifiée
+    Aucune collecte planifiée
 </h5>
 
 <p class="text-muted mb-0">
-Vous n'êtes actuellement affecté à aucune collecte.
+    Vous n'êtes actuellement affecté à aucune collecte.
 </p>
 
 </div>
@@ -268,6 +377,20 @@ Vous n'êtes actuellement affecté à aucune collecte.
 
 <?php foreach ($collectes as $collecte): ?>
 
+<?php
+$idCollecte = (int) ($collecte["id_collecte"] ?? 0);
+
+$dateCollecte = substr(
+    (string) ($collecte["date_collecte"] ?? ""),
+    0,
+    10
+);
+
+$peutAnnulerCollecte =
+    $dateCollecte !== "" &&
+    $dateCollecte >= date("Y-m-d");
+?>
+
 <div class="col-lg-6">
 
 <div class="mission-card p-4 h-100">
@@ -275,7 +398,7 @@ Vous n'êtes actuellement affecté à aucune collecte.
 <div class="d-flex gap-3">
 
 <div class="mission-icon icon-collecte">
-<i class="fa-solid fa-truck"></i>
+    <i class="fa-solid fa-truck"></i>
 </div>
 
 <div class="flex-grow-1">
@@ -283,13 +406,13 @@ Vous n'êtes actuellement affecté à aucune collecte.
 <div class="d-flex justify-content-between gap-2">
 
 <h5 class="mb-2">
-Collecte #<?= (int) ($collecte["id_collecte"] ?? 0) ?>
+    Collecte #<?= $idCollecte ?>
 </h5>
 
 <?php if (!empty($collecte["statut"])): ?>
 
 <span class="badge bg-success align-self-start">
-<?= htmlspecialchars($collecte["statut"]) ?>
+    <?= htmlspecialchars($collecte["statut"]) ?>
 </span>
 
 <?php endif; ?>
@@ -299,8 +422,8 @@ Collecte #<?= (int) ($collecte["id_collecte"] ?? 0) ?>
 <?php if (!empty($collecte["date_collecte"])): ?>
 
 <div class="meta-line">
-<i class="fa-regular fa-calendar me-2"></i>
-<?= htmlspecialchars($collecte["date_collecte"]) ?>
+    <i class="fa-regular fa-calendar me-2"></i>
+    <?= htmlspecialchars($collecte["date_collecte"]) ?>
 </div>
 
 <?php endif; ?>
@@ -308,13 +431,14 @@ Collecte #<?= (int) ($collecte["id_collecte"] ?? 0) ?>
 <?php if (!empty($collecte["heure_debut"])): ?>
 
 <div class="meta-line">
+
 <i class="fa-regular fa-clock me-2"></i>
 
 <?= htmlspecialchars($collecte["heure_debut"]) ?>
 
 <?php if (!empty($collecte["heure_fin"])): ?>
--
-<?= htmlspecialchars($collecte["heure_fin"]) ?>
+    -
+    <?= htmlspecialchars($collecte["heure_fin"]) ?>
 <?php endif; ?>
 
 </div>
@@ -324,6 +448,7 @@ Collecte #<?= (int) ($collecte["id_collecte"] ?? 0) ?>
 <?php if (!empty($collecte["adresse"])): ?>
 
 <div class="meta-line">
+
 <i class="fa-solid fa-location-dot me-2"></i>
 
 <?= htmlspecialchars($collecte["adresse"]) ?>
@@ -345,11 +470,55 @@ Collecte #<?= (int) ($collecte["id_collecte"] ?? 0) ?>
 <?php if (!empty($collecte["role_collecte"])): ?>
 
 <div class="meta-line">
+
 <i class="fa-solid fa-user-tag me-2"></i>
+
 Rôle :
+
 <strong>
-<?= htmlspecialchars($collecte["role_collecte"]) ?>
+    <?= htmlspecialchars($collecte["role_collecte"]) ?>
 </strong>
+
+</div>
+
+<?php endif; ?>
+
+<div class="annulation-zone">
+
+<?php if ($peutAnnulerCollecte): ?>
+
+<form
+    method="post"
+    onsubmit="return confirm('Êtes-vous sûr de vouloir annuler votre participation à cette collecte ?');"
+>
+
+<input
+    type="hidden"
+    name="action"
+    value="annuler_collecte"
+>
+
+<input
+    type="hidden"
+    name="id_collecte"
+    value="<?= $idCollecte ?>"
+>
+
+<button
+    type="submit"
+    class="btn btn-outline-danger btn-sm"
+>
+    <i class="fa-solid fa-xmark me-1"></i>
+    Annuler ma participation
+</button>
+
+</form>
+
+<?php else: ?>
+
+<div class="past-event">
+    <i class="fa-solid fa-lock me-1"></i>
+    Cette collecte est passée, l'annulation n'est plus possible.
 </div>
 
 <?php endif; ?>
@@ -357,9 +526,8 @@ Rôle :
 </div>
 
 </div>
-
 </div>
-
+</div>
 </div>
 
 <?php endforeach; ?>
@@ -369,7 +537,6 @@ Rôle :
 <?php endif; ?>
 
 </div>
-
 </div>
 
 <div class="card planning-card">
@@ -381,17 +548,17 @@ Rôle :
 <div>
 
 <h3 class="mb-1">
-Mes services
+    Mes services
 </h3>
 
 <p class="text-muted mb-0">
-Services et ateliers auxquels vous participez.
+    Services et ateliers auxquels vous participez.
 </p>
 
 </div>
 
 <span class="badge bg-warning text-dark fs-6">
-<?= count($services) ?>
+    <?= count($services) ?>
 </span>
 
 </div>
@@ -406,11 +573,11 @@ Services et ateliers auxquels vous participez.
 ></i>
 
 <h5>
-Aucun service planifié
+    Aucun service planifié
 </h5>
 
 <p class="text-muted mb-0">
-Vous n'êtes actuellement affecté à aucun service.
+    Vous n'êtes actuellement affecté à aucun service.
 </p>
 
 </div>
@@ -421,6 +588,20 @@ Vous n'êtes actuellement affecté à aucun service.
 
 <?php foreach ($services as $service): ?>
 
+<?php
+$idService = (int) ($service["id_service"] ?? 0);
+
+$dateService = substr(
+    (string) ($service["date_service"] ?? ""),
+    0,
+    10
+);
+
+$peutAnnulerService =
+    $dateService !== "" &&
+    $dateService >= date("Y-m-d");
+?>
+
 <div class="col-lg-6">
 
 <div class="mission-card p-4 h-100">
@@ -428,7 +609,7 @@ Vous n'êtes actuellement affecté à aucun service.
 <div class="d-flex gap-3">
 
 <div class="mission-icon icon-service">
-<i class="fa-solid fa-calendar-check"></i>
+    <i class="fa-solid fa-calendar-check"></i>
 </div>
 
 <div class="flex-grow-1">
@@ -436,17 +617,15 @@ Vous n'êtes actuellement affecté à aucun service.
 <div class="d-flex justify-content-between gap-2">
 
 <h5 class="mb-2">
-<?= htmlspecialchars(
-    $service["nom"] ?? "Service"
-) ?>
+    <?= htmlspecialchars(
+        $service["nom"] ?? "Service"
+    ) ?>
 </h5>
 
 <?php if (!empty($service["role_service"])): ?>
 
 <span class="badge bg-success align-self-start">
-<?= htmlspecialchars(
-    $service["role_service"]
-) ?>
+    <?= htmlspecialchars($service["role_service"]) ?>
 </span>
 
 <?php endif; ?>
@@ -456,8 +635,8 @@ Vous n'êtes actuellement affecté à aucun service.
 <?php if (!empty($service["date_service"])): ?>
 
 <div class="meta-line">
-<i class="fa-regular fa-calendar me-2"></i>
-<?= htmlspecialchars($service["date_service"]) ?>
+    <i class="fa-regular fa-calendar me-2"></i>
+    <?= htmlspecialchars($service["date_service"]) ?>
 </div>
 
 <?php endif; ?>
@@ -465,13 +644,14 @@ Vous n'êtes actuellement affecté à aucun service.
 <?php if (!empty($service["heure_debut"])): ?>
 
 <div class="meta-line">
+
 <i class="fa-regular fa-clock me-2"></i>
 
 <?= htmlspecialchars($service["heure_debut"]) ?>
 
 <?php if (!empty($service["heure_fin"])): ?>
--
-<?= htmlspecialchars($service["heure_fin"]) ?>
+    -
+    <?= htmlspecialchars($service["heure_fin"]) ?>
 <?php endif; ?>
 
 </div>
@@ -481,8 +661,11 @@ Vous n'êtes actuellement affecté à aucun service.
 <?php if (!empty($service["lieu"])): ?>
 
 <div class="meta-line">
+
 <i class="fa-solid fa-location-dot me-2"></i>
+
 <?= htmlspecialchars($service["lieu"]) ?>
+
 </div>
 
 <?php endif; ?>
@@ -490,9 +673,52 @@ Vous n'êtes actuellement affecté à aucun service.
 <?php if (!empty($service["statut_service"])): ?>
 
 <div class="meta-line">
+
 <i class="fa-solid fa-circle-info me-2"></i>
+
 Statut :
 <?= htmlspecialchars($service["statut_service"]) ?>
+
+</div>
+
+<?php endif; ?>
+
+<div class="annulation-zone">
+
+<?php if ($peutAnnulerService): ?>
+
+<form
+    method="post"
+    onsubmit="return confirm('Êtes-vous sûr de vouloir annuler votre participation à ce service ?');"
+>
+
+<input
+    type="hidden"
+    name="action"
+    value="annuler_service"
+>
+
+<input
+    type="hidden"
+    name="id_service"
+    value="<?= $idService ?>"
+>
+
+<button
+    type="submit"
+    class="btn btn-outline-danger btn-sm"
+>
+    <i class="fa-solid fa-xmark me-1"></i>
+    Annuler ma participation
+</button>
+
+</form>
+
+<?php else: ?>
+
+<div class="past-event">
+    <i class="fa-solid fa-lock me-1"></i>
+    Ce service est passé, l'annulation n'est plus possible.
 </div>
 
 <?php endif; ?>
@@ -500,9 +726,8 @@ Statut :
 </div>
 
 </div>
-
 </div>
-
+</div>
 </div>
 
 <?php endforeach; ?>
@@ -512,7 +737,6 @@ Statut :
 <?php endif; ?>
 
 </div>
-
 </div>
 
 </main>

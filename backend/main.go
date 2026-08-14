@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/MMina040/PA-No-More-Waste/config"
+	"github.com/MMina040/PA-No-More-Waste/handlers"
 	"github.com/MMina040/PA-No-More-Waste/routes"
 )
 
@@ -12,6 +13,8 @@ func main() {
 
 	// Connect to the database
 	config.ConnectDatabase()
+
+	handlers.LancerArchivageAutomatique()
 
 	// Route of test
 	routes.RegisterRoutes()
