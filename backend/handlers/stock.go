@@ -9,44 +9,63 @@ import (
 )
 
 func GetStocks(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 
 	var stocks []models.Stock
 
 	rows, err := config.DB.Query(`
 		SELECT
-			id_stock,
-			id_produit,
-			quantite,
-			emplacement,
-			date_entree,
-			derniere_maj
-		FROM stock
+			s.id_stock,
+			s.id_produit,
+			p.nom,
+			p.code_barre,
+			c.nom,
+			s.quantite,
+			s.emplacement,
+			s.date_entree,
+			s.derniere_maj
+		FROM stock s
+		INNER JOIN produit p
+			ON p.id_produit = s.id_produit
+		INNER JOIN categorie_produit c
+			ON c.id_categorie = p.id_categorie
+		ORDER BY p.nom ASC
 	`)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
 	defer rows.Close()
 
 	for rows.Next() {
-
 		var s models.Stock
 
-		rows.Scan(
+		err := rows.Scan(
 			&s.IDStock,
 			&s.IDProduit,
+			&s.NomProduit,
+			&s.CodeBarre,
+			&s.Categorie,
 			&s.Quantite,
 			&s.Emplacement,
 			&s.DateEntree,
 			&s.DerniereMaj,
 		)
 
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
 		stocks = append(stocks, s)
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	if err := rows.Err(); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	json.NewEncoder(w).Encode(stocks)
 }
 
