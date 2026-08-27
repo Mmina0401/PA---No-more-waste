@@ -6,11 +6,42 @@ exigerRole("ADMIN", "RESPONSABLE");
 
 require_once "../includes/api.php";
 
+function messageErreurAPI($resultat, $messageParDefaut)
+{
+    $data = $resultat["data"] ?? [];
+
+    if (is_array($data)) {
+        if (!empty($data["message"])) {
+            return $data["message"];
+        }
+
+        if (!empty($data["error"])) {
+            return $data["error"];
+        }
+    }
+
+    return $messageParDefaut;
+}
+
 $id = $_GET["id"] ?? null;
-$t = ["id_association" => "", "id_vehicule" => "", "date_livraison" => "", "heure_depart" => "", "heure_retour" => "", "statut" => "PLANIFIEE", "commentaire" => ""];
+$messageErreur = null;
+$messageSucces = isset($_GET["ok"])
+    ? "Tournée enregistrée avec succès."
+    : null;
+
+$t = [
+    "id_association" => "",
+    "id_vehicule" => "",
+    "date_livraison" => "",
+    "heure_depart" => "",
+    "heure_retour" => "",
+    "statut" => "PLANIFIEE",
+    "commentaire" => ""
+];
 
 if ($id) {
-    $t = API::get("/api/livraisons/get?id=" . $id);
+    $t = API::get("/api/livraisons/get?id=" . (int) $id);
+
     if (!$t || isset($t["error"])) {
         header("Location: index.php");
         exit;
@@ -21,59 +52,112 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $action = $_POST["action"] ?? "enregistrer";
 
     if ($action === "ajouter-produit") {
-        API::post("/api/lignes-livraison/create", [
+        $resultat = API::postAvecStatut("/api/lignes-livraison/create", [
             "id_livraison" => (int) $id,
             "id_produit"   => (int) $_POST["id_produit"],
             "quantite"     => (float) $_POST["quantite"],
         ]);
-        header("Location: formulaire.php?id=" . $id);
-        exit;
-    }
 
-    if ($action === "retirer-produit") {
-        API::post("/api/lignes-livraison/delete", [
+        if ($resultat["status"] >= 200 && $resultat["status"] < 300) {
+            header("Location: formulaire.php?id=" . (int) $id);
+            exit;
+        }
+
+        $messageErreur = messageErreurAPI(
+            $resultat,
+            "Impossible d'ajouter ce produit à la tournée."
+        );
+    } elseif ($action === "retirer-produit") {
+        $resultat = API::postAvecStatut("/api/lignes-livraison/delete", [
             "id_livraison" => (int) $id,
             "id_produit"   => (int) $_POST["id_produit"],
         ]);
-        header("Location: formulaire.php?id=" . $id);
-        exit;
-    }
 
-    $payload = [
-        "id_association" => (int) $_POST["id_association"],
-        "id_vehicule"    => (int) $_POST["id_vehicule"],
-        "date_livraison" => $_POST["date_livraison"],
-        "heure_depart"   => $_POST["heure_depart"] ?: null,
-        "heure_retour"   => $_POST["heure_retour"] ?: null,
-        "commentaire"    => trim($_POST["commentaire"]) ?: null,
-    ];
+        if ($resultat["status"] >= 200 && $resultat["status"] < 300) {
+            header("Location: formulaire.php?id=" . (int) $id);
+            exit;
+        }
 
-    if ($id) {
-        $payload["id_livraison"] = (int) $id;
-        $payload["statut"] = $_POST["statut"];
-        API::post("/api/livraisons/update", $payload);
-        header("Location: formulaire.php?id=" . $id);
-        exit;
+        $messageErreur = messageErreurAPI(
+            $resultat,
+            "Impossible de retirer ce produit de la tournée."
+        );
     } else {
-        $payload["statut"] = "PLANIFIEE";
-        $res = API::post("/api/livraisons/create", $payload);
-        header("Location: formulaire.php?id=" . $res["id_livraison"]);
-        exit;
+        $payload = [
+            "id_association" => (int) $_POST["id_association"],
+            "id_vehicule"    => (int) $_POST["id_vehicule"],
+            "date_livraison" => $_POST["date_livraison"],
+            "heure_depart"   => $_POST["heure_depart"] ?: null,
+            "heure_retour"   => $_POST["heure_retour"] ?: null,
+            "commentaire"    => trim($_POST["commentaire"]) ?: null,
+        ];
+
+        if ($id) {
+            $payload["id_livraison"] = (int) $id;
+            $payload["statut"] = $_POST["statut"];
+
+            $resultat = API::postAvecStatut("/api/livraisons/update", $payload);
+
+            if ($resultat["status"] >= 200 && $resultat["status"] < 300) {
+                header("Location: formulaire.php?id=" . (int) $id . "&ok=1");
+                exit;
+            }
+
+            $messageErreur = messageErreurAPI(
+                $resultat,
+                "Impossible d'enregistrer la tournée."
+            );
+
+            // On garde les valeurs saisies dans le formulaire si l'API refuse
+            // l'enregistrement (par exemple si le stock est insuffisant).
+            $t = array_merge($t, $payload);
+        } else {
+            $payload["statut"] = "PLANIFIEE";
+            $resultat = API::postAvecStatut("/api/livraisons/create", $payload);
+
+            if (
+                $resultat["status"] >= 200 &&
+                $resultat["status"] < 300 &&
+                !empty($resultat["data"]["id_livraison"])
+            ) {
+                header("Location: formulaire.php?id=" . (int) $resultat["data"]["id_livraison"]);
+                exit;
+            }
+
+            $messageErreur = messageErreurAPI(
+                $resultat,
+                "Impossible de créer la tournée."
+            );
+
+            $t = array_merge($t, $payload);
+        }
     }
 }
 
 $associations = API::get("/api/associations");
 $vehicules    = API::get("/api/vehicules");
-if (!is_array($associations)) $associations = [];
-if (!is_array($vehicules))    $vehicules = [];
+
+if (!is_array($associations)) {
+    $associations = [];
+}
+
+if (!is_array($vehicules)) {
+    $vehicules = [];
+}
 
 $lignes = [];
 $produits = [];
+
 if ($id) {
-    $lignes = API::get("/api/lignes-livraison?id_livraison=" . $id);
-    if (!is_array($lignes)) $lignes = [];
+    $lignes = API::get("/api/lignes-livraison?id_livraison=" . (int) $id);
+    if (!is_array($lignes)) {
+        $lignes = [];
+    }
+
     $produits = API::get("/api/produits");
-    if (!is_array($produits)) $produits = [];
+    if (!is_array($produits)) {
+        $produits = [];
+    }
 }
 
 include "../includes/header.php";
@@ -90,6 +174,25 @@ include "../includes/navbar.php";
 
 <h2><?= $id ? "Gérer la Tournée" : "Nouvelle Tournée" ?></h2>
 <hr>
+
+<?php if ($messageErreur): ?>
+<div class="alert alert-danger">
+    <?= htmlspecialchars($messageErreur) ?>
+</div>
+<?php endif; ?>
+
+<?php if ($messageSucces): ?>
+<div class="alert alert-success">
+    <?= htmlspecialchars($messageSucces) ?>
+</div>
+<?php endif; ?>
+
+<?php if ($id && ($t["statut"] ?? "") === "TERMINEE"): ?>
+<div class="alert alert-success">
+    Cette tournée est terminée : les quantités livrées ont déjà été retirées du stock.
+    Les produits chargés ne peuvent plus être modifiés.
+</div>
+<?php endif; ?>
 
 <form method="post" class="col-md-6 mb-4">
 
@@ -136,12 +239,18 @@ include "../includes/navbar.php";
 <?php if ($id): ?>
 <div class="mb-3">
 <label class="form-label">Statut</label>
+
+<?php if (($t["statut"] ?? "") === "TERMINEE"): ?>
+<input type="hidden" name="statut" value="TERMINEE">
+<input type="text" class="form-control" value="Terminée" disabled>
+<?php else: ?>
 <select name="statut" class="form-select">
-<option value="PLANIFIEE" <?= $t["statut"] === "PLANIFIEE" ? "selected" : "" ?>>Planifiée</option>
-<option value="EN_COURS" <?= $t["statut"] === "EN_COURS" ? "selected" : "" ?>>En cours</option>
-<option value="TERMINEE" <?= $t["statut"] === "TERMINEE" ? "selected" : "" ?>>Terminée</option>
-<option value="ANNULEE" <?= $t["statut"] === "ANNULEE" ? "selected" : "" ?>>Annulée</option>
+<option value="PLANIFIEE" <?= ($t["statut"] ?? "") === "PLANIFIEE" ? "selected" : "" ?>>Planifiée</option>
+<option value="EN_COURS" <?= ($t["statut"] ?? "") === "EN_COURS" ? "selected" : "" ?>>En cours</option>
+<option value="TERMINEE" <?= ($t["statut"] ?? "") === "TERMINEE" ? "selected" : "" ?>>Terminée</option>
+<option value="ANNULEE" <?= ($t["statut"] ?? "") === "ANNULEE" ? "selected" : "" ?>>Annulée</option>
 </select>
+<?php endif; ?>
 </div>
 <?php endif; ?>
 
@@ -159,6 +268,7 @@ include "../includes/navbar.php";
 
 <h5>Produits chargés</h5>
 
+<?php if (($t["statut"] ?? "") !== "TERMINEE"): ?>
 <form method="post" class="row g-2 align-items-end mb-3">
 <input type="hidden" name="action" value="ajouter-produit">
 <div class="col-auto">
@@ -170,31 +280,36 @@ include "../includes/navbar.php";
 </select>
 </div>
 <div class="col-auto">
-<input type="number" step="0.01" name="quantite" class="form-control" placeholder="Quantité" required>
+<input type="number" step="0.01" min="0.01" name="quantite" class="form-control" placeholder="Quantité" required>
 </div>
 <div class="col-auto">
 <button type="submit" class="btn btn-success">Ajouter</button>
 </div>
 </form>
+<?php endif; ?>
 
 <?php if (empty($lignes)): ?>
 <div class="alert alert-light border">Aucun produit chargé dans cette tournée.</div>
 <?php else: ?>
 <table class="table table-bordered table-striped">
 <thead class="table-dark">
-<tr><th>Produit</th><th>Quantité</th><th></th></tr>
+<tr><th>Produit</th><th>Quantité</th><th>Action</th></tr>
 </thead>
 <tbody>
 <?php foreach ($lignes as $l): ?>
 <tr>
 <td><?= htmlspecialchars($l["nom_produit"]) ?></td>
-<td><?= $l["quantite"] ?></td>
+<td><?= htmlspecialchars((string) $l["quantite"]) ?></td>
 <td>
+<?php if (($t["statut"] ?? "") !== "TERMINEE"): ?>
 <form method="post" style="display:inline;">
 <input type="hidden" name="action" value="retirer-produit">
 <input type="hidden" name="id_produit" value="<?= $l["id_produit"] ?>">
 <button type="submit" class="btn btn-danger btn-sm">Retirer</button>
 </form>
+<?php else: ?>
+<span class="text-muted">Verrouillé</span>
+<?php endif; ?>
 </td>
 </tr>
 <?php endforeach; ?>

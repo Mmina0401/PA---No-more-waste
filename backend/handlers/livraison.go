@@ -1,9 +1,12 @@
 package handlers
 
 import (
+	"database/sql"
 	"encoding/json"
+	"fmt"
 	"net/http"
 
+	"github.com/MMina040/PA-No-More-Waste/auth"
 	"github.com/MMina040/PA-No-More-Waste/config"
 )
 
@@ -164,17 +167,167 @@ func UpdateLivraison(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err := config.DB.Exec(`
-		UPDATE livraison
-		SET id_association=?, id_vehicule=?, date_livraison=?, heure_depart=?, heure_retour=?, statut=?, commentaire=?
-		WHERE id_livraison=?
-	`, t.IDAssociation, t.IDVehicule, t.DateLivraison, t.HeureDepart, t.HeureRetour, t.Statut, t.Commentaire, t.IDLivraison)
+	tx, err := config.DB.Begin()
+	if err != nil {
+		http.Error(w, "impossible de démarrer la transaction", http.StatusInternalServerError)
+		return
+	}
+	defer tx.Rollback()
 
+	var statutActuel string
+	err = tx.QueryRow(`
+		SELECT statut
+		FROM livraison
+		WHERE id_livraison = ?
+		FOR UPDATE
+	`, t.IDLivraison).Scan(&statutActuel)
+	if err == sql.ErrNoRows {
+		http.Error(w, "tournée introuvable", http.StatusNotFound)
+		return
+	}
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	json.NewEncoder(w).Encode(map[string]string{"message": "Tournée modifiée"})
+
+	// Une tournée terminée a déjà débité le stock. On ne permet pas de la rouvrir,
+	// sinon les mouvements de stock deviendraient incohérents.
+	if statutActuel == "TERMINEE" && t.Statut != "TERMINEE" {
+		http.Error(w, "une tournée terminée ne peut pas être rouverte", http.StatusConflict)
+		return
+	}
+
+	stockDebite := false
+
+	// Le stock n'est débité qu'une seule fois : au passage vers TERMINEE.
+	if statutActuel != "TERMINEE" && t.Statut == "TERMINEE" {
+		type ligneAControler struct {
+			IDProduit  int
+			Quantite   float64
+			NomProduit string
+		}
+
+		rows, err := tx.Query(`
+			SELECT dl.id_produit, dl.quantite, p.nom
+			FROM detail_livraison dl
+			JOIN produit p ON p.id_produit = dl.id_produit
+			WHERE dl.id_livraison = ?
+		`, t.IDLivraison)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		var lignes []ligneAControler
+		for rows.Next() {
+			var ligne ligneAControler
+			if err := rows.Scan(&ligne.IDProduit, &ligne.Quantite, &ligne.NomProduit); err != nil {
+				rows.Close()
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			lignes = append(lignes, ligne)
+		}
+		rows.Close()
+
+		if len(lignes) == 0 {
+			http.Error(w, "ajoutez au moins un produit avant de terminer la tournée", http.StatusConflict)
+			return
+		}
+
+		informations := auth.RecupererInformationsConnecte(r)
+		if informations == nil || informations.IDUtilisateur == 0 {
+			http.Error(w, "utilisateur connecté introuvable", http.StatusUnauthorized)
+			return
+		}
+
+		for _, ligne := range lignes {
+			var idStock int
+			var quantiteDisponible float64
+
+			err = tx.QueryRow(`
+				SELECT id_stock, quantite
+				FROM stock
+				WHERE id_produit = ?
+				FOR UPDATE
+			`, ligne.IDProduit).Scan(&idStock, &quantiteDisponible)
+
+			if err == sql.ErrNoRows {
+				http.Error(
+					w,
+					fmt.Sprintf("stock indisponible pour le produit %s", ligne.NomProduit),
+					http.StatusConflict,
+				)
+				return
+			}
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			if quantiteDisponible < ligne.Quantite {
+				http.Error(
+					w,
+					fmt.Sprintf(
+						"stock insuffisant pour %s : %.2f disponible(s), %.2f demandé(s)",
+						ligne.NomProduit,
+						quantiteDisponible,
+						ligne.Quantite,
+					),
+					http.StatusConflict,
+				)
+				return
+			}
+
+			_, err = tx.Exec(`
+				UPDATE stock
+				SET quantite = quantite - ?
+				WHERE id_stock = ?
+			`, ligne.Quantite, idStock)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			_, err = tx.Exec(`
+				INSERT INTO mouvement_stock
+					(id_stock, id_utilisateur, type, quantite, motif)
+				VALUES (?, ?, 'SORTIE', ?, ?)
+			`,
+				idStock,
+				informations.IDUtilisateur,
+				ligne.Quantite,
+				fmt.Sprintf("Sortie automatique - tournée #%d", t.IDLivraison),
+			)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+		}
+
+		stockDebite = true
+	}
+
+	_, err = tx.Exec(`
+		UPDATE livraison
+		SET id_association=?, id_vehicule=?, date_livraison=?, heure_depart=?, heure_retour=?, statut=?, commentaire=?
+		WHERE id_livraison=?
+	`, t.IDAssociation, t.IDVehicule, t.DateLivraison, t.HeureDepart, t.HeureRetour, t.Statut, t.Commentaire, t.IDLivraison)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if err := tx.Commit(); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	message := "Tournée modifiée"
+	if stockDebite {
+		message = "Tournée terminée : les produits ont été retirés du stock"
+	}
+	json.NewEncoder(w).Encode(map[string]string{"message": message})
 }
 
 func DeleteLivraison(w http.ResponseWriter, r *http.Request) {
@@ -192,8 +345,24 @@ func DeleteLivraison(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var statut string
+	err := config.DB.QueryRow(`SELECT statut FROM livraison WHERE id_livraison = ?`, body.IDLivraison).Scan(&statut)
+	if err == sql.ErrNoRows {
+		http.Error(w, "tournée introuvable", http.StatusNotFound)
+		return
+	}
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if statut == "TERMINEE" {
+		http.Error(w, "une tournée terminée ne peut pas être supprimée", http.StatusConflict)
+		return
+	}
+
 	// ON DELETE CASCADE supprime aussi les lignes (produits) de cette tournée.
-	_, err := config.DB.Exec(`DELETE FROM livraison WHERE id_livraison = ?`, body.IDLivraison)
+	_, err = config.DB.Exec(`DELETE FROM livraison WHERE id_livraison = ?`, body.IDLivraison)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -255,7 +424,22 @@ func AjouterLigneLivraison(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err := config.DB.Exec(`
+	var statut string
+	err := config.DB.QueryRow(`SELECT statut FROM livraison WHERE id_livraison = ?`, l.IDLivraison).Scan(&statut)
+	if err == sql.ErrNoRows {
+		http.Error(w, "tournée introuvable", http.StatusNotFound)
+		return
+	}
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if statut == "TERMINEE" {
+		http.Error(w, "les produits d'une tournée terminée ne peuvent plus être modifiés", http.StatusConflict)
+		return
+	}
+
+	_, err = config.DB.Exec(`
 		INSERT INTO detail_livraison (id_livraison, id_produit, quantite)
 		VALUES (?,?,?)
 	`, l.IDLivraison, l.IDProduit, l.Quantite)
@@ -280,7 +464,22 @@ func SupprimerLigneLivraison(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err := config.DB.Exec(`
+	var statut string
+	err := config.DB.QueryRow(`SELECT statut FROM livraison WHERE id_livraison = ?`, l.IDLivraison).Scan(&statut)
+	if err == sql.ErrNoRows {
+		http.Error(w, "tournée introuvable", http.StatusNotFound)
+		return
+	}
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if statut == "TERMINEE" {
+		http.Error(w, "les produits d'une tournée terminée ne peuvent plus être modifiés", http.StatusConflict)
+		return
+	}
+
+	_, err = config.DB.Exec(`
 		DELETE FROM detail_livraison WHERE id_livraison = ? AND id_produit = ?
 	`, l.IDLivraison, l.IDProduit)
 

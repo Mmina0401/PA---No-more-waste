@@ -6,22 +6,35 @@ exigerRole("ADMIN", "RESPONSABLE");
 
 require_once "../includes/api.php";
 
+$messageErreur = null;
+
 if ($_SERVER["REQUEST_METHOD"] === "POST" && ($_POST["action"] ?? "") === "delete") {
-    API::post("/api/livraisons/delete", ["id_livraison" => (int) $_POST["id"]]);
-    header("Location: index.php");
-    exit;
+    $resultat = API::postAvecStatut("/api/livraisons/delete", [
+        "id_livraison" => (int) $_POST["id"]
+    ]);
+
+    if ($resultat["status"] >= 200 && $resultat["status"] < 300) {
+        header("Location: index.php");
+        exit;
+    }
+
+    $data = $resultat["data"] ?? [];
+    $messageErreur = $data["message"] ?? $data["error"] ?? "Impossible de supprimer cette tournée.";
 }
 
 $tournees = API::get("/api/livraisons");
-if (!is_array($tournees)) $tournees = [];
+if (!is_array($tournees)) {
+    $tournees = [];
+}
 
-function badgeStatutTournee($statut) {
+function badgeStatutTournee($statut)
+{
     return match ($statut) {
         "PLANIFIEE" => '<span class="badge bg-secondary">Planifiée</span>',
         "EN_COURS"  => '<span class="badge bg-warning text-dark">En cours</span>',
         "TERMINEE"  => '<span class="badge bg-success">Terminée</span>',
         "ANNULEE"   => '<span class="badge bg-danger">Annulée</span>',
-        default     => '<span class="badge bg-light text-dark">' . htmlspecialchars($statut) . '</span>',
+        default      => '<span class="badge bg-light text-dark">' . htmlspecialchars($statut) . '</span>',
     };
 }
 
@@ -39,6 +52,12 @@ include "../includes/navbar.php";
 
 <h2>Tournées de distribution</h2>
 <hr>
+
+<?php if ($messageErreur): ?>
+<div class="alert alert-danger">
+    <?= htmlspecialchars($messageErreur) ?>
+</div>
+<?php endif; ?>
 
 <a href="formulaire.php" class="btn btn-success mb-3">+ Nouvelle Tournée</a>
 
@@ -67,13 +86,15 @@ include "../includes/navbar.php";
 <td>
 <a href="formulaire.php?id=<?= $t["id_livraison"] ?>" class="btn btn-warning btn-sm">Gérer</a>
 
-<a href="pdf.php?id=<?= $t["id_livraison"] ?>"class="btn btn-primary btn-sm">PDF</a>
+<a href="pdf.php?id=<?= $t["id_livraison"] ?>" class="btn btn-primary btn-sm">PDF</a>
 
+<?php if (($t["statut"] ?? "") !== "TERMINEE"): ?>
 <form method="post" style="display:inline;" onsubmit="return confirm('Supprimer cette tournée ?');">
 <input type="hidden" name="action" value="delete">
 <input type="hidden" name="id" value="<?= $t["id_livraison"] ?>">
 <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
 </form>
+<?php endif; ?>
 </td>
 </tr>
 <?php endforeach; ?>
