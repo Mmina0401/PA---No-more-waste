@@ -1,14 +1,10 @@
 <?php
-// Script d'installation de la base de données No More Waste.
-// Lancer avec : php install.php
 
-// ---------- Réglages de connexion (mêmes identifiants que backend/config/database.go) ----------
-$hoteMySQL       = "127.0.0.1";
-$portMySQL       = 3306;
+$hoteMySQL        = "127.0.0.1";
+$portMySQL        = 3306;
 $utilisateurMySQL = "root";
 $motDePasseMySQL  = "root";
 
-// ---------- Liste des fichiers SQL à exécuter, dans l'ordre ----------
 $fichiersSQL = [
     "database/01_create_database.sql",
     "database/02_create_tables.sql",
@@ -48,8 +44,7 @@ function executerFichierSQL($connexion, $cheminFichier)
         exit(1);
     }
 
-    // Il faut lire tous les résultats intermédiaires, sinon le fichier
-    // suivant échouerait ("Commands out of sync").
+    // Vide les résultats avant de passer au fichier suivant
     do {
         mysqli_store_result($connexion);
     } while (mysqli_more_results($connexion) && mysqli_next_result($connexion));
@@ -57,11 +52,14 @@ function executerFichierSQL($connexion, $cheminFichier)
     echo "  OK : $cheminFichier\n";
 }
 
-// ---------- Déroulé du script ----------
-
 echo "=== Installation de la base No More Waste ===\n\n";
 
-$connexion = ouvrirConnexionMySQL($hoteMySQL, $portMySQL, $utilisateurMySQL, $motDePasseMySQL);
+$connexion = ouvrirConnexionMySQL(
+    $hoteMySQL,
+    $portMySQL,
+    $utilisateurMySQL,
+    $motDePasseMySQL
+);
 
 foreach ($fichiersSQL as $fichier) {
     executerFichierSQL($connexion, $fichier);

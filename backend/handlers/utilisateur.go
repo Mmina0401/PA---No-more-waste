@@ -9,8 +9,6 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// Utilisateur représente n'importe quel compte (admin, responsable,
-// bénévole, commerçant, visiteur).
 type Utilisateur struct {
 	ID           int       `json:"id_utilisateur"`
 	Nom          string    `json:"nom"`
@@ -25,16 +23,12 @@ type Utilisateur struct {
 	Actif        bool      `json:"actif"`
 	DateCreation time.Time `json:"date_creation"`
 
-	// Champs spécifiques aux commerçants (NULL pour les autres rôles)
 	RaisonSociale   *string `json:"raison_sociale"`
 	Siret           *string `json:"siret"`
 	SecteurActivite *string `json:"secteur_activite"`
 }
 
-// GetUtilisateurs renvoie la liste des utilisateurs.
-// Filtre optionnel : /api/utilisateurs?role=COMMERCANT
 func GetUtilisateurs(w http.ResponseWriter, r *http.Request) {
-
 	w.Header().Set("Content-Type", "application/json")
 
 	query := `
@@ -82,9 +76,7 @@ func GetUtilisateurs(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(utilisateurs)
 }
 
-// GetUtilisateur renvoie un seul utilisateur : /api/utilisateurs/get?id=3
 func GetUtilisateur(w http.ResponseWriter, r *http.Request) {
-
 	w.Header().Set("Content-Type", "application/json")
 
 	id := r.URL.Query().Get("id")
@@ -118,7 +110,6 @@ func GetUtilisateur(w http.ResponseWriter, r *http.Request) {
 }
 
 func CreateUtilisateur(w http.ResponseWriter, r *http.Request) {
-
 	w.Header().Set("Content-Type", "application/json")
 
 	if r.Method != http.MethodPost {
@@ -136,12 +127,13 @@ func CreateUtilisateur(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "nom, prenom, email, mot_de_passe et role sont obligatoires", http.StatusBadRequest)
 		return
 	}
+
 	if u.Role == "COMMERCANT" && (u.Siret == nil || *u.Siret == "") {
 		http.Error(w, "le SIRET est obligatoire pour un commerçant", http.StatusBadRequest)
 		return
 	}
 
-	// Chiffrement du mot de passe avant stockage — jamais en clair en base.
+	// Chiffre le mot de passe avant de le stocker
 	hash, err := bcrypt.GenerateFromPassword([]byte(u.MotDePasse), bcrypt.DefaultCost)
 	if err != nil {
 		http.Error(w, "erreur lors du chiffrement du mot de passe", http.StatusInternalServerError)
@@ -172,7 +164,6 @@ func CreateUtilisateur(w http.ResponseWriter, r *http.Request) {
 }
 
 func UpdateUtilisateur(w http.ResponseWriter, r *http.Request) {
-
 	w.Header().Set("Content-Type", "application/json")
 
 	if r.Method != http.MethodPost {
@@ -185,6 +176,7 @@ func UpdateUtilisateur(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+
 	if u.ID == 0 {
 		http.Error(w, "id_utilisateur manquant", http.StatusBadRequest)
 		return
@@ -210,7 +202,6 @@ func UpdateUtilisateur(w http.ResponseWriter, r *http.Request) {
 }
 
 func DeleteUtilisateur(w http.ResponseWriter, r *http.Request) {
-
 	w.Header().Set("Content-Type", "application/json")
 
 	if r.Method != http.MethodPost {
@@ -221,6 +212,7 @@ func DeleteUtilisateur(w http.ResponseWriter, r *http.Request) {
 	var body struct {
 		ID int `json:"id_utilisateur"`
 	}
+
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

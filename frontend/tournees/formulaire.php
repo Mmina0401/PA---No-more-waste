@@ -108,7 +108,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 "Impossible d'enregistrer la tournée."
             );
 
-            // On garde les valeurs saisies dans le formulaire si l'API refuse
+            // On garde les valeurs saisies dans le formulaire si l'api refuse
             // l'enregistrement (par exemple si le stock est insuffisant).
             $t = array_merge($t, $payload);
         } else {

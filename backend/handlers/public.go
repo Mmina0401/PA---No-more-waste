@@ -11,7 +11,6 @@ import (
 	"github.com/MMina040/PA-No-More-Waste/config"
 )
 
-// ServicePublic est une version simplifiée d'un service visible sans connexion.
 type ServicePublic struct {
 	IDService   int     `json:"id_service"`
 	Nom         string  `json:"nom"`
@@ -24,8 +23,8 @@ type ServicePublic struct {
 	NbInscrits  int     `json:"nb_inscrits"`
 }
 
-// trouverOuCreerVisiteur sert uniquement aux demandes publiques
-// (collecte d'un particulier ou d'un commerçant non connecté).
+// Crée ou récupère un visiteur pour une demande publique
+
 func trouverOuCreerVisiteur(nom, prenom, email string, raisonSociale, siret, secteurActivite *string) (int, error) {
 	var idUtilisateur int
 	var role string
@@ -37,8 +36,7 @@ func trouverOuCreerVisiteur(nom, prenom, email string, raisonSociale, siret, sec
 	`, email).Scan(&idUtilisateur, &role)
 
 	if err == nil {
-		// Si le compte est déjà un commerçant ou un visiteur, on peut compléter
-		// les informations professionnelles sans modifier son rôle.
+
 		if (role == "COMMERCANT" || role == "VISITEUR") && (raisonSociale != nil || siret != nil) {
 			_, _ = config.DB.Exec(`
 				UPDATE utilisateur
@@ -55,7 +53,7 @@ func trouverOuCreerVisiteur(nom, prenom, email string, raisonSociale, siret, sec
 		return 0, err
 	}
 
-	// Ce compte technique n'est pas un compte membre et ne doit pas se connecter.
+	// Crée un compte visiteur technique
 	motDePasseTechnique := "visiteur-" + email
 	hash, errHash := bcrypt.GenerateFromPassword([]byte(motDePasseTechnique), bcrypt.DefaultCost)
 	if errHash != nil {
@@ -77,9 +75,6 @@ func trouverOuCreerVisiteur(nom, prenom, email string, raisonSociale, siret, sec
 	return int(nouvelID), nil
 }
 
-// ObtenirServicesPublics renvoie les services ouverts.
-// Tout le monde peut les consulter, mais seules les adhésions commerçantes
-// actives donnent le droit de s'y inscrire.
 func ObtenirServicesPublics(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -120,9 +115,8 @@ func ObtenirServicesPublics(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(services)
 }
 
-// DemanderAdhesionCommercant crée une demande de compte COMMERCANT.
-// Le compte reste inactif jusqu'à validation par l'administration.
-// Une adhésion annuelle active sera ensuite créée par l'admin après validation/paiement.
+// Crée une demande de compte commerçant
+
 func DemanderAdhesionCommercant(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -186,8 +180,8 @@ func DemanderAdhesionCommercant(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// Un commerçant ayant déjà demandé une collecte publique conserve le
-		// même identifiant et donc l'historique de ses collectes.
+		// Garde le même compte si l'utilisateur était déjà visiteur
+
 		_, err = config.DB.Exec(`
 			UPDATE utilisateur
 			SET nom = ?, prenom = ?, mot_de_passe = ?, telephone = ?,
@@ -227,8 +221,8 @@ func DemanderAdhesionCommercant(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// DemanderCollectePublique permet à un commerçant ou un particulier, même
-// non adhérent, de demander le passage d'un camion.
+// Enregistre une demande de collecte publique
+
 func DemanderCollectePublique(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -292,8 +286,8 @@ func DemanderCollectePublique(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// CandidaterBenevole crée un compte BENEVOLE inactif.
-// Après validation, le bénévole peut répondre aux offres et être affecté aux missions.
+// Crée une candidature bénévole
+
 func CandidaterBenevole(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 

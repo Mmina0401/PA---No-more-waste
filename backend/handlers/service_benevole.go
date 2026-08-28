@@ -124,8 +124,7 @@ func CreateServiceBenevole(w http.ResponseWriter, r *http.Request) {
 	}
 	defer tx.Rollback()
 
-	// On utilise le nombre de bénévoles demandé dans l'offre,
-	// pas la capacité des participants/adhérents du service.
+	// Vérifie le nombre de places bénévoles
 	var nombreBenevolesRequis int
 
 	err = tx.QueryRow(`

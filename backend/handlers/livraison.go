@@ -10,7 +10,6 @@ import (
 	"github.com/MMina040/PA-No-More-Waste/config"
 )
 
-// Livraison représente une tournée de distribution vers une association bénéficiaire.
 type Livraison struct {
 	IDLivraison   int     `json:"id_livraison"`
 	IDAssociation int     `json:"id_association"`
@@ -21,29 +20,24 @@ type Livraison struct {
 	Statut        string  `json:"statut"`
 	Commentaire   *string `json:"commentaire"`
 
-	// Renseignés uniquement par GetLivraisons (jointure), pour affichage.
 	NomAssociation  string `json:"nom_association,omitempty"`
 	Immatriculation string `json:"immatriculation,omitempty"`
 }
 
-// LigneLivraison représente un produit chargé pour une tournée donnée.
 type LigneLivraison struct {
 	IDLivraison int     `json:"id_livraison"`
 	IDProduit   int     `json:"id_produit"`
 	Quantite    float64 `json:"quantite"`
 
-	// Renseigné uniquement par GetLignesLivraison (jointure), pour affichage.
 	NomProduit string `json:"nom_produit,omitempty"`
 }
 
-// Association représente une structure bénéficiaire des tournées.
 type Association struct {
 	IDAssociation int     `json:"id_association"`
 	Nom           string  `json:"nom"`
 	Ville         *string `json:"ville"`
 }
 
-// Vehicule représente un véhicule disponible pour les tournées.
 type Vehicule struct {
 	IDVehicule      int    `json:"id_vehicule"`
 	Immatriculation string `json:"immatriculation"`
@@ -51,8 +45,6 @@ type Vehicule struct {
 	Modele          string `json:"modele"`
 	Etat            string `json:"etat"`
 }
-
-// ---------- Tournées (livraisons) ----------
 
 func GetLivraisons(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
@@ -89,7 +81,6 @@ func GetLivraisons(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(livraisons)
 }
 
-// GetLivraison renvoie une seule tournée : /api/livraisons/get?id=3
 func GetLivraison(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -190,8 +181,8 @@ func UpdateLivraison(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Une tournée terminée a déjà débité le stock. On ne permet pas de la rouvrir,
-	// sinon les mouvements de stock deviendraient incohérents.
+	// Une tournée terminée ne peut pas être rouverte
+
 	if statutActuel == "TERMINEE" && t.Statut != "TERMINEE" {
 		http.Error(w, "une tournée terminée ne peut pas être rouverte", http.StatusConflict)
 		return
@@ -199,7 +190,7 @@ func UpdateLivraison(w http.ResponseWriter, r *http.Request) {
 
 	stockDebite := false
 
-	// Le stock n'est débité qu'une seule fois : au passage vers TERMINEE.
+	// Retire le stock quand la tournée passe à TERMINEE
 	if statutActuel != "TERMINEE" && t.Statut == "TERMINEE" {
 		type ligneAControler struct {
 			IDProduit  int
@@ -361,7 +352,6 @@ func DeleteLivraison(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// ON DELETE CASCADE supprime aussi les lignes (produits) de cette tournée.
 	_, err = config.DB.Exec(`DELETE FROM livraison WHERE id_livraison = ?`, body.IDLivraison)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -370,10 +360,6 @@ func DeleteLivraison(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"message": "Tournée supprimée"})
 }
 
-// ---------- Produits chargés dans une tournée ----------
-
-// GetLignesLivraison renvoie les produits chargés pour une tournée précise.
-// /api/lignes-livraison?id_livraison=3
 func GetLignesLivraison(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -489,8 +475,6 @@ func SupprimerLigneLivraison(w http.ResponseWriter, r *http.Request) {
 	}
 	json.NewEncoder(w).Encode(map[string]string{"message": "Produit retiré de la tournée"})
 }
-
-// ---------- Listes utilitaires (pour remplir les menus déroulants) ----------
 
 func GetAssociations(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")

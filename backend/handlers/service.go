@@ -8,9 +8,6 @@ import (
 	"github.com/MMina040/PA-No-More-Waste/config"
 )
 
-// Service correspond à une session concrète (ex: "Cuisine solidaire" le
-// 2026-08-01 de 9h à 12h). Il n'y a pas de table "créneau" séparée : la
-// date et les horaires sont directement sur la ligne de service.
 type Service struct {
 	IDService   int     `json:"id_service"`
 	Nom         string  `json:"nom"`
@@ -20,21 +17,17 @@ type Service struct {
 	HeureDebut  *string `json:"heure_debut"`
 	HeureFin    *string `json:"heure_fin"`
 	CapaciteMax *int    `json:"capacite_max"`
-	Statut      string  `json:"statut"` // OUVERT | COMPLET | ANNULE
+	Statut      string  `json:"statut"`
 
-	// Rempli uniquement par GetServices : nombre de personnes déjà inscrites
-	// (calculé, pas stocké en base) pour savoir combien de places restent.
 	NbInscrits int `json:"nb_inscrits,omitempty"`
 }
 
-// InscriptionService représente la participation d’un commerçant adhérent à un service.
 type InscriptionService struct {
 	IDService       int    `json:"id_service"`
 	IDUtilisateur   int    `json:"id_utilisateur"`
 	DateInscription string `json:"date_inscription,omitempty"`
-	Statut          string `json:"statut"` // INSCRIT | CONFIRME | ANNULE
+	Statut          string `json:"statut"`
 
-	// Renseignés uniquement par GetInscriptions (jointure), pour affichage.
 	NomUtilisateur    string `json:"nom,omitempty"`
 	PrenomUtilisateur string `json:"prenom,omitempty"`
 }
@@ -74,7 +67,6 @@ func GetServices(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(services)
 }
 
-// GetService renvoie un seul service : /api/services/get?id=3
 func GetService(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
@@ -189,7 +181,6 @@ func DeleteService(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// ON DELETE CASCADE supprime aussi les inscriptions liées à ce service
 	_, err := config.DB.Exec(`DELETE FROM service WHERE id_service = ?`, body.IDService)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -199,9 +190,6 @@ func DeleteService(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"message": "Service supprimé"})
 }
 
-// GetInscriptions renvoie les inscriptions d'un service, avec le nom du
-// commerçant adhérent inscrit (jointure sur utilisateur).
-// /api/inscriptions?id_service=3
 func GetInscriptions(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
@@ -243,8 +231,6 @@ func GetInscriptions(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(inscriptions)
 }
 
-// CreateInscription inscrit un utilisateur à un service.
-// Refuse si le service est déjà complet ou si la personne est déjà inscrite.
 func CreateInscription(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
@@ -274,7 +260,7 @@ func CreateInscription(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Vérifie la capacité restante avant d'inscrire
+	// Vérifie s’il reste des places
 	var capaciteMax *int
 	var nbInscrits int
 	err = config.DB.QueryRow(`SELECT capacite_max FROM service WHERE id_service = ? AND statut = 'OUVERT'`, i.IDService).Scan(&capaciteMax)
@@ -311,7 +297,6 @@ func CreateInscription(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"message": "Inscription enregistrée"})
 }
 
-// UpdateInscription change le statut d'une inscription (ex: CONFIRME, ANNULE)
 func UpdateInscription(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
@@ -340,7 +325,6 @@ func UpdateInscription(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"message": "Inscription modifiée"})
 }
 
-// DeleteInscription désinscrit complètement une personne d'un service.
 func DeleteInscription(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
@@ -369,8 +353,8 @@ func DeleteInscription(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"message": "Inscription supprimée"})
 }
 
-// InscrireAdherentService permet au commerçant connecté de s'inscrire lui-même.
-// L'inscription est refusée si son adhésion annuelle n'est pas active.
+// Le commerçant connecté peut s’inscrire lui-même
+
 func InscrireAdherentService(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 

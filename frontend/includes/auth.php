@@ -1,7 +1,4 @@
 <?php
-// À inclure (toujours après session_start()) en haut de toute page qui doit
-// être protégée. Ensuite, appelle exigerConnexion() ou exigerRole(...) juste
-// après l'avoir inclus, sinon il ne se passe rien.
 
 function exigerConnexion()
 {

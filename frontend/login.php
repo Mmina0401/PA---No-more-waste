@@ -19,7 +19,7 @@ function destinationApresConnexion($role)
     return "/public/accueil.php";
 }
 
-// Si déjà connecté, rediriger vers l'espace correspondant au rôle.
+// Si deja connecté, rediriger vers l'espace correspondant au role
 if (isset($_SESSION["utilisateur"])) {
     header("Location: " . destinationApresConnexion($_SESSION["utilisateur"]["role"] ?? ""));
     exit;

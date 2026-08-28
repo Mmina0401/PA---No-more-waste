@@ -382,7 +382,8 @@ CREATE TABLE service (
     statut ENUM(
         'OUVERT',
         'COMPLET',
-        'ANNULE'
+        'ANNULE',
+        'TERMINE'
     ) DEFAULT 'OUVERT'
 
 );

@@ -114,10 +114,9 @@ func GenererPDFLivraison(w http.ResponseWriter, r *http.Request) {
 	pdf.SetAutoPageBreak(true, 18)
 	pdf.AddPage()
 
-	// Cette fonction permet d'afficher correctement les caractères français.
+	// Gère les caractères français
 	traduit := pdf.UnicodeTranslatorFromDescriptor("")
 
-	// En-tête
 	pdf.SetFillColor(34, 125, 52)
 	pdf.SetTextColor(255, 255, 255)
 	pdf.SetFont("Arial", "B", 20)
@@ -164,7 +163,6 @@ func GenererPDFLivraison(w http.ResponseWriter, r *http.Request) {
 
 	pdf.Ln(5)
 
-	// Informations sur la livraison
 	pdf.SetFillColor(220, 235, 220)
 	pdf.SetFont("Arial", "B", 12)
 	pdf.CellFormat(
@@ -189,7 +187,6 @@ func GenererPDFLivraison(w http.ResponseWriter, r *http.Request) {
 
 	pdf.Ln(5)
 
-	// Association bénéficiaire
 	pdf.SetFillColor(220, 235, 220)
 	pdf.SetFont("Arial", "B", 12)
 	pdf.CellFormat(
@@ -215,7 +212,6 @@ func GenererPDFLivraison(w http.ResponseWriter, r *http.Request) {
 
 	pdf.Ln(5)
 
-	// Véhicule
 	pdf.SetFillColor(220, 235, 220)
 	pdf.SetFont("Arial", "B", 12)
 	pdf.CellFormat(
@@ -239,7 +235,6 @@ func GenererPDFLivraison(w http.ResponseWriter, r *http.Request) {
 
 	pdf.Ln(6)
 
-	// Tableau des produits
 	pdf.SetFont("Arial", "B", 12)
 	pdf.CellFormat(
 		180,
@@ -312,7 +307,6 @@ func GenererPDFLivraison(w http.ResponseWriter, r *http.Request) {
 		)
 	}
 
-	// Commentaire
 	if commentaire.Valid && commentaire.String != "" {
 		pdf.Ln(6)
 		pdf.SetFont("Arial", "B", 11)

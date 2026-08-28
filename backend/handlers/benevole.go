@@ -9,10 +9,6 @@ import (
 	"github.com/MMina040/PA-No-More-Waste/config"
 )
 
-// ========== Espace personnel du bénévole connecté ==========
-
-// MissionCollecteBenevole représente une collecte à laquelle le bénévole
-// connecté a été affecté.
 type MissionCollecteBenevole struct {
 	IDCollecte          int    `json:"id_collecte"`
 	DateCollecte        string `json:"date_collecte"`
@@ -40,8 +36,7 @@ type ServiceBenevole struct {
 	StatutParticipation string `json:"statut_participation"`
 }
 
-// GetPlanningBenevole renvoie les demandes en attente ET les affectations validées
-// du bénévole connecté. Son identifiant provient du JWT.
+// Récupère le planning du bénévole connecté
 func GetPlanningBenevole(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -53,7 +48,7 @@ func GetPlanningBenevole(w http.ResponseWriter, r *http.Request) {
 
 	collectes := []MissionCollecteBenevole{}
 
-	// 1) Collectes déjà affectées par un admin
+	// Collectes déjà acceptées
 	rows, err := config.DB.Query(`
 		SELECT
 			c.id_collecte,
@@ -104,7 +99,7 @@ func GetPlanningBenevole(w http.ResponseWriter, r *http.Request) {
 	}
 	rows.Close()
 
-	// 2) Collectes demandées mais pas encore affectées
+	// Collectes en attente
 	rowsAttenteCollectes, err := config.DB.Query(`
 		SELECT DISTINCT
 			c.id_collecte,
@@ -160,7 +155,7 @@ func GetPlanningBenevole(w http.ResponseWriter, r *http.Request) {
 
 	services := []ServiceBenevole{}
 
-	// 3) Services déjà affectés par un admin
+	// Services déjà acceptés
 	rowsServices, err := config.DB.Query(`
 		SELECT
 			s.id_service,
@@ -205,7 +200,7 @@ func GetPlanningBenevole(w http.ResponseWriter, r *http.Request) {
 	}
 	rowsServices.Close()
 
-	// 4) Services demandés mais pas encore affectés
+	// Services en attente
 	rowsAttenteServices, err := config.DB.Query(`
 		SELECT DISTINCT
 			s.id_service,
@@ -452,8 +447,6 @@ func AnnulerParticipationService(w http.ResponseWriter, r *http.Request) {
 		"message": "Participation au service annulée",
 	})
 }
-
-// ========== Gestion des bénévoles par un admin/responsable ==========
 
 type Benevole struct {
 	ID          int      `json:"id_utilisateur"`

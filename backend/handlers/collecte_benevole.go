@@ -75,8 +75,7 @@ func CreateCollecteBenevole(w http.ResponseWriter, r *http.Request) {
 	}
 	defer tx.Rollback()
 
-	// On récupère la limite de places de l'offre ouverte liée à cette collecte.
-	// FOR UPDATE évite que deux affectations simultanées dépassent la limite.
+	// Vérifie le nombre de places disponibles
 	var nombreBenevolesRequis int
 
 	err = tx.QueryRow(`
@@ -95,7 +94,6 @@ func CreateCollecteBenevole(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Si une offre ouverte existe, on applique sa limite.
 	if err == nil {
 		var nombreAffectes int
 

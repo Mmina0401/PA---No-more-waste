@@ -10,22 +10,18 @@ import (
 )
 
 func main() {
-
-	// Connect to the database
 	config.ConnectDatabase()
 
 	handlers.LancerArchivageAutomatique()
 
-	// Route of test
 	routes.RegisterRoutes()
 
-	// Message affiché au démarrage
 	fmt.Println("===================================")
 	fmt.Println("  No More Waste API")
 	fmt.Println("  Serveur démarré sur le port 8080")
 	fmt.Println("===================================")
 
-	// Lancement du serveur
+	// Lance le serveur
 	err := http.ListenAndServe(":8080", nil)
 
 	if err != nil {

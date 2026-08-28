@@ -1,7 +1,4 @@
 <?php
-// Point d'entrée unique du site : décide quoi faire de chaque adresse demandée
-// avant de servir la vraie page (réécriture d'URL), et affiche une page
-// d'erreur propre si rien ne correspond, ou si le site plante.
 
 register_shutdown_function(function () {
     $erreur = error_get_last();
@@ -16,35 +13,32 @@ register_shutdown_function(function () {
 $cheminDemande = urldecode(parse_url($_SERVER["REQUEST_URI"], PHP_URL_PATH));
 $cheminSurDisque = __DIR__ . $cheminDemande;
 
-// 1. Le fichier demandé existe déjà tel quel -> on laisse faire normalement.
+// Sert directement le fichier s'il existe
 if ($cheminDemande !== "/" && file_exists($cheminSurDisque) && !is_dir($cheminSurDisque)) {
     return false;
 }
 
-// 2. Un dossier a été demandé (ex: /commercants) -> on sert son index.php.
+// Cherche un index.php dans le dossier
 $dossierSansSlashFinal = rtrim($cheminSurDisque, "/");
 if (is_dir($dossierSansSlashFinal) && file_exists($dossierSansSlashFinal . "/index.php")) {
     include $dossierSansSlashFinal . "/index.php";
     return true;
 }
 
-// 3. Une adresse "propre", sans ".php" -> on complète nous-mêmes.
+// Ajoute .php si besoin
 if (file_exists($cheminSurDisque . ".php")) {
     include $cheminSurDisque . ".php";
     return true;
 }
 
-// 4. La racine du site -> comportement normal.
 if ($cheminDemande === "/" && file_exists(__DIR__ . "/index.php")) {
     return false;
 }
 
-// 5. Rien ne correspond : page 404.
+// Affiche une erreur 404 si rien n'existe
 http_response_code(404);
 afficherPageErreur(404, "Page introuvable", "Cette page n'existe pas ou plus.");
 return true;
-
-// ---------- Une seule fonction, réutilisée pour toutes les erreurs ----------
 
 function afficherPageErreur($code, $titre, $message)
 {

@@ -78,7 +78,7 @@ func commercantAdherentActif(idUtilisateur int) (bool, error) {
 	return existe > 0, err
 }
 
-// GetEspaceCommercant renvoie uniquement les données du commerçant connecté.
+// Récupère les infos du commerçant connecté
 func GetEspaceCommercant(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -199,8 +199,7 @@ func GetEspaceCommercant(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(espace)
 }
 
-// GetAdherentsActifs permet à l'admin de sélectionner uniquement les commerçants
-// qui ont actuellement une adhésion annuelle active.
+// Récupère les commerçants avec une adhésion active
 func GetAdherentsActifs(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -243,8 +242,7 @@ func GetAdherentsActifs(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(adherents)
 }
 
-// ChangerStatutCommercant valide, désactive ou réactive un compte commerçant
-// sans supprimer son historique ni ses adhésions.
+// Active ou désactive un compte commerçant
 func ChangerStatutCommercant(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 

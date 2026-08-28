@@ -1,8 +1,6 @@
 SET NAMES utf8mb4;
 USE no_more_waste;
 
--- Les participants aux services sont les commerçants adhérents.
--- Les bénévoles qui animent/aident un service sont gérés séparément.
 CREATE TABLE IF NOT EXISTS service_benevole (
     id_service INT NOT NULL,
     id_utilisateur INT NOT NULL,
@@ -21,8 +19,7 @@ CREATE TABLE IF NOT EXISTS service_benevole (
         ON DELETE CASCADE
 );
 
--- Migration des éventuelles anciennes "inscriptions" de bénévoles vers
--- leur vraie table d'affectation.
+-- Déplace les anciennes inscriptions bénévoles
 INSERT IGNORE INTO service_benevole (id_service, id_utilisateur, role_service)
 SELECT i.id_service, i.id_utilisateur, 'BENEVOLE'
 FROM inscription_service i
@@ -35,14 +32,11 @@ FROM inscription_service i
 JOIN utilisateur u ON u.id_utilisateur = i.id_utilisateur
 WHERE u.role = 'BENEVOLE';
 
--- Un SIRET identifie un commerçant : on évite les doublons quand il est renseigné.
+-- Évite les doublons de SIRET
 ALTER TABLE utilisateur
     ADD UNIQUE INDEX uq_utilisateur_siret (siret);
 
-
--- Correction ciblée des anciennes données de démonstration :
--- les adhésions doivent appartenir au commerçant de démonstration,
--- pas aux bénévoles Paul/Aditya.
+-- Corrige les anciennes données de test
 DELETE a
 FROM adhesion a
 JOIN utilisateur u ON u.id_utilisateur = a.id_utilisateur

@@ -7,7 +7,6 @@ import (
 	"github.com/MMina040/PA-No-More-Waste/config"
 )
 
-// Adhesion représente une période d'adhésion d'un commerçant.
 type Adhesion struct {
 	ID            int     `json:"id_adhesion"`
 	IDUtilisateur int     `json:"id_utilisateur"`
@@ -20,8 +19,6 @@ type Adhesion struct {
 	RappelEnvoye  bool    `json:"rappel_envoye"`
 }
 
-// AdhesionARelancer représente une adhésion qui arrive bientôt à expiration,
-// avec les informations du commerçant pour pouvoir le recontacter.
 type AdhesionARelancer struct {
 	IDAdhesion    int    `json:"id_adhesion"`
 	IDUtilisateur int    `json:"id_utilisateur"`
@@ -31,10 +28,7 @@ type AdhesionARelancer struct {
 	JoursRestants int    `json:"jours_restants"`
 }
 
-// GetAdhesions renvoie les adhésions. Filtre optionnel :
-// /api/adhesions?id_utilisateur=3 -> historique d'un seul commerçant
 func GetAdhesions(w http.ResponseWriter, r *http.Request) {
-
 	w.Header().Set("Content-Type", "application/json")
 
 	requete := `
@@ -43,12 +37,14 @@ func GetAdhesions(w http.ResponseWriter, r *http.Request) {
 			date_paiement, mode_paiement, statut, rappel_envoye
 		FROM adhesion
 	`
+
 	arguments := []interface{}{}
 
 	if idUtilisateur := r.URL.Query().Get("id_utilisateur"); idUtilisateur != "" {
 		requete += " WHERE id_utilisateur = ?"
 		arguments = append(arguments, idUtilisateur)
 	}
+
 	requete += " ORDER BY date_debut DESC"
 
 	rows, err := config.DB.Query(requete, arguments...)
@@ -61,7 +57,6 @@ func GetAdhesions(w http.ResponseWriter, r *http.Request) {
 	var adhesions []Adhesion
 
 	for rows.Next() {
-
 		var a Adhesion
 
 		err := rows.Scan(
@@ -81,7 +76,6 @@ func GetAdhesions(w http.ResponseWriter, r *http.Request) {
 }
 
 func CreateAdhesion(w http.ResponseWriter, r *http.Request) {
-
 	var a Adhesion
 
 	err := json.NewDecoder(r.Body).Decode(&a)
@@ -113,7 +107,6 @@ func CreateAdhesion(w http.ResponseWriter, r *http.Request) {
 }
 
 func UpdateAdhesion(w http.ResponseWriter, r *http.Request) {
-
 	var a Adhesion
 
 	err := json.NewDecoder(r.Body).Decode(&a)
@@ -144,7 +137,6 @@ func UpdateAdhesion(w http.ResponseWriter, r *http.Request) {
 }
 
 func DeleteAdhesion(w http.ResponseWriter, r *http.Request) {
-
 	var a Adhesion
 
 	err := json.NewDecoder(r.Body).Decode(&a)
@@ -168,11 +160,8 @@ func DeleteAdhesion(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// ObtenirAdhesionsARelancer renvoie les adhésions actives qui expirent dans
-// les 30 prochains jours et qui n'ont pas encore été relancées.
-// GET /api/rappels/a-envoyer
+// Récupère les adhésions qui expirent dans moins de 30 jours
 func ObtenirAdhesionsARelancer(w http.ResponseWriter, r *http.Request) {
-
 	w.Header().Set("Content-Type", "application/json")
 
 	lignes, err := config.DB.Query(`
@@ -190,6 +179,7 @@ func ObtenirAdhesionsARelancer(w http.ResponseWriter, r *http.Request) {
 		  AND a.date_fin BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)
 		ORDER BY a.date_fin ASC
 	`)
+
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -200,24 +190,27 @@ func ObtenirAdhesionsARelancer(w http.ResponseWriter, r *http.Request) {
 
 	for lignes.Next() {
 		var a AdhesionARelancer
+
 		if err := lignes.Scan(
-			&a.IDAdhesion, &a.IDUtilisateur, &a.NomCommercant, &a.Email,
-			&a.DateFin, &a.JoursRestants,
+			&a.IDAdhesion,
+			&a.IDUtilisateur,
+			&a.NomCommercant,
+			&a.Email,
+			&a.DateFin,
+			&a.JoursRestants,
 		); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+
 		resultat = append(resultat, a)
 	}
 
 	json.NewEncoder(w).Encode(resultat)
 }
 
-// MarquerRappelEnvoye indique qu'une relance a été envoyée pour une adhésion,
-// pour qu'elle n'apparaisse plus dans la liste à relancer.
-// POST /api/rappels/marquer   corps attendu : {"id_adhesion": 3}
+// Indique que le rappel a déjà été envoyé
 func MarquerRappelEnvoye(w http.ResponseWriter, r *http.Request) {
-
 	w.Header().Set("Content-Type", "application/json")
 
 	if r.Method != http.MethodPost {
@@ -228,16 +221,23 @@ func MarquerRappelEnvoye(w http.ResponseWriter, r *http.Request) {
 	var corps struct {
 		IDAdhesion int `json:"id_adhesion"`
 	}
+
 	if err := json.NewDecoder(r.Body).Decode(&corps); err != nil {
 		http.Error(w, "JSON invalide", http.StatusBadRequest)
 		return
 	}
 
-	_, err := config.DB.Exec(`UPDATE adhesion SET rappel_envoye = TRUE WHERE id_adhesion = ?`, corps.IDAdhesion)
+	_, err := config.DB.Exec(
+		`UPDATE adhesion SET rappel_envoye = TRUE WHERE id_adhesion = ?`,
+		corps.IDAdhesion,
+	)
+
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	json.NewEncoder(w).Encode(map[string]string{"message": "rappel marqué comme envoyé"})
+	json.NewEncoder(w).Encode(map[string]string{
+		"message": "rappel marqué comme envoyé",
+	})
 }

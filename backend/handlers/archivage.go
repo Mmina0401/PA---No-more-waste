@@ -28,6 +28,7 @@ func ArchiverEvenementsPasses() {
 		log.Println("Erreur archivage services :", err)
 	}
 
+	// Ferme les offres bénévoles liées à un événement terminé
 	_, err = config.DB.Exec(`
 		UPDATE offre_benevole ob
 		SET ob.statut = 'FERMEE'
@@ -59,6 +60,7 @@ func ArchiverEvenementsPasses() {
 	}
 }
 
+// Lance l'archivage toutes les heures
 func LancerArchivageAutomatique() {
 	ArchiverEvenementsPasses()
 
