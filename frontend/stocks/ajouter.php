@@ -1,6 +1,4 @@
 <?php
-// ADMIN STOCK — Ajout d'une entrée de stock
-
 session_start();
 
 require_once "../includes/api.php";

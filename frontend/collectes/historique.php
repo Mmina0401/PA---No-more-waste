@@ -1,6 +1,4 @@
 <?php
-// ADMIN COLLECTES — Historique — Collectes terminées et annulées
-
 session_start();
 
 require_once "../includes/auth.php";

@@ -1,6 +1,4 @@
 <?php
-// ADMIN CANDIDATURES — Liste et validation des candidatures bénévoles
-
 session_start();
 
 require_once "../includes/auth.php";

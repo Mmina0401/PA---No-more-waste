@@ -1,6 +1,4 @@
 <?php
-// AUTHENTIFICATION — Connexion + redirection selon le rôle
-
 session_start();
 require_once __DIR__ . "/includes/api.php";
 

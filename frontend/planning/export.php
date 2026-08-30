@@ -1,6 +1,4 @@
 <?php
-// ADMIN PLANNING — Export Excel du planning des bénévoles
-
 session_start();
 
 require_once __DIR__ . "/../includes/auth.php";

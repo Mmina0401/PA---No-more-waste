@@ -1,6 +1,4 @@
 <?php
-// ADMIN COMMERCANTS — Création et modification d'un commerçant
-
 session_start();
 
 require_once "../includes/auth.php";

@@ -1,6 +1,4 @@
 <?php
-// PUBLIC — En-tête commun + navigation des pages publiques
-
 require_once __DIR__ . "/../includes/lang.php";
 
 $roleEntete = strtoupper($_SESSION["utilisateur"]["role"] ?? "");

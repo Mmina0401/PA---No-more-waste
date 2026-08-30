@@ -1,6 +1,4 @@
 <?php
-// ROUTAGE FRONTEND — Gestion des erreurs et des réponses côté PHP
-
 
 register_shutdown_function(function () {
     $erreur = error_get_last();

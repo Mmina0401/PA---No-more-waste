@@ -1,6 +1,4 @@
 <?php
-// ADMIN TOURNEES — Liste et gestion des tournées de distribution
-
 session_start();
 
 require_once "../includes/auth.php";

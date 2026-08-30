@@ -1,6 +1,4 @@
 <?php
-// ADMIN STOCK — Modification d'une entrée de stock
-
 session_start();
 
 include "../includes/header.php";

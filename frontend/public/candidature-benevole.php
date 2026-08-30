@@ -1,6 +1,4 @@
 <?php
-// PUBLIC — Formulaire de candidature bénévole
-
 session_start();
 
 require_once __DIR__ . "/../includes/api.php";

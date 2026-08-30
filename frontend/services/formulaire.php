@@ -1,6 +1,4 @@
 <?php
-// ADMIN SERVICES — Création et modification d'un service
-
 session_start();
 
 require_once "../includes/auth.php";

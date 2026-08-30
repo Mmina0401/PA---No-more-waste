@@ -1,6 +1,4 @@
 <?php
-// ADMIN OFFRES BENEVOLES — Réponses reçues + affectation réelle des bénévoles
-
 session_start();
 
 require_once __DIR__ . "/../includes/auth.php";

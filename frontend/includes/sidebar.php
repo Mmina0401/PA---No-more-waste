@@ -1,6 +1,4 @@
 <?php
-// NAVIGATION ADMIN — Menu latéral du back-office
-
 $elementsMenu = [
     ["href" => "../dashboard.php",           "icone" => "fa-house",          "texte" => "Dashboard"],
     ["href" => "../commercant/index.php",    "icone" => "fa-shop",           "texte" => "Commerçants"],

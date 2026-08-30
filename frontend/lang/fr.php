@@ -1,6 +1,4 @@
 <?php
-// TRADUCTIONS FR — Textes français de l'interface
-
 
 return [
     "services" => "Services",

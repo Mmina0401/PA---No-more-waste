@@ -1,5 +1,3 @@
-<!-- NAVIGATION — Barre de navigation principale -->
-
 <nav class="navbar navbar-expand-lg navbar-dark bg-success shadow-sm">
 
 <div class="container-fluid">

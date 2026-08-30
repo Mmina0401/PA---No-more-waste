@@ -1,6 +1,4 @@
 <?php
-// PUBLIC — Page d'accueil du site
-
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }

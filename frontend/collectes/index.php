@@ -1,6 +1,4 @@
 <?php
-// ADMIN COLLECTES — Liste principale — Collectes actives + actions
-
 session_start();
 
 require_once "../includes/auth.php";
