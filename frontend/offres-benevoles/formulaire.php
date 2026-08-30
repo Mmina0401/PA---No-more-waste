@@ -72,7 +72,7 @@ if (
     }
 
     if ($error === "") {
-        $resultat = API::post(
+        $resultat = API::postAvecStatut(
             "/api/offres-benevoles/create",
             [
                 "type_evenement" => $type,
@@ -83,10 +83,10 @@ if (
             ]
         );
 
-        if (
-            is_array($resultat) &&
-            isset($resultat["message"])
-        ) {
+        $statutHttp = (int) ($resultat["status"] ?? 0);
+        $donnees = $resultat["data"] ?? [];
+
+        if ($statutHttp >= 200 && $statutHttp < 300) {
             if ($type === "COLLECTE") {
                 header(
                     "Location: /collectes/index.php?offre_creee=1"
@@ -102,9 +102,17 @@ if (
             }
         }
 
-        $error = is_array($resultat) && isset($resultat["error"])
-            ? $resultat["error"]
-            : "Impossible de créer l'offre bénévole.";
+        if (is_array($donnees)) {
+            $error = $donnees["error"]
+                ?? $donnees["message"]
+                ?? "Impossible de créer l'offre bénévole.";
+        } else {
+            $error = trim((string) $donnees);
+        }
+
+        if ($error === "") {
+            $error = "Impossible de créer l'offre bénévole.";
+        }
     }
 }
 

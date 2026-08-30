@@ -142,6 +142,67 @@ func CreateCollecteBenevole(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// La réponse du bénévole à l'offre devient acceptée dès son affectation.
+	_, err = tx.Exec(`
+		UPDATE offre_benevole_reponse obr
+		INNER JOIN offre_benevole ob
+			ON ob.id_offre = obr.id_offre
+		SET
+			obr.statut = 'ACCEPTEE',
+			obr.date_decision = NOW()
+		WHERE ob.type_evenement = 'COLLECTE'
+		AND ob.id_evenement = ?
+		AND obr.id_utilisateur = ?
+		AND obr.statut = 'EN_ATTENTE'
+	`, b.IDCollecte, b.IDUtilisateur)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Si toutes les places sont attribuées, l'offre est fermée.
+	if err == nil {
+		var idOffre int
+		var requis int
+
+		errOffre := tx.QueryRow(`
+			SELECT id_offre, nombre_benevoles_requis
+			FROM offre_benevole
+			WHERE type_evenement = 'COLLECTE'
+			AND id_evenement = ?
+			AND statut = 'OUVERTE'
+			ORDER BY id_offre DESC
+			LIMIT 1
+			FOR UPDATE
+		`, b.IDCollecte).Scan(&idOffre, &requis)
+
+		if errOffre == nil {
+			var affectes int
+			if err := tx.QueryRow(`
+				SELECT COUNT(*)
+				FROM collecte_benevole
+				WHERE id_collecte = ?
+			`, b.IDCollecte).Scan(&affectes); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			if requis > 0 && affectes >= requis {
+				if _, err := tx.Exec(`
+					UPDATE offre_benevole
+					SET statut = 'FERMEE'
+					WHERE id_offre = ?
+				`, idOffre); err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+			}
+		} else if errOffre != sql.ErrNoRows {
+			http.Error(w, errOffre.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+
 	if err := tx.Commit(); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

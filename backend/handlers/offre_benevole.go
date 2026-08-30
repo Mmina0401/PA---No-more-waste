@@ -103,11 +103,11 @@ func CreateOffreBenevole(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if statutEvenement == "ANNULEE" ||
-			statutEvenement == "TERMINEE" {
+		if statutEvenement != "VALIDEE" &&
+			statutEvenement != "PLANIFIEE" {
 			http.Error(
 				w,
-				"Cette collecte ne peut plus recevoir d'offre bénévole",
+				"Une offre bénévole ne peut être créée que pour une collecte validée ou planifiée",
 				http.StatusBadRequest,
 			)
 			return
@@ -135,7 +135,7 @@ func CreateOffreBenevole(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if statutEvenement == "ANNULE" {
+		if statutEvenement == "ANNULE" || statutEvenement == "TERMINE" {
 			http.Error(
 				w,
 				"Ce service ne peut plus recevoir d'offre bénévole",

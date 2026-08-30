@@ -46,9 +46,11 @@ func GetPlanningBenevole(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Le planning contient uniquement les missions réellement affectées
+	// au bénévole connecté. Une simple réponse à une offre n'est pas
+	// considérée comme une affectation.
 	collectes := []MissionCollecteBenevole{}
 
-	// Collectes déjà acceptées
 	rows, err := config.DB.Query(`
 		SELECT
 			c.id_collecte,
@@ -63,7 +65,7 @@ func GetPlanningBenevole(w http.ResponseWriter, r *http.Request) {
 			COALESCE(TIME_FORMAT(cb.heure_arrivee, '%H:%i'), ''),
 			COALESCE(TIME_FORMAT(cb.heure_depart, '%H:%i'), '')
 		FROM collecte_benevole cb
-		JOIN collecte c
+		INNER JOIN collecte c
 			ON c.id_collecte = cb.id_collecte
 		WHERE cb.id_utilisateur = ?
 		ORDER BY c.date_collecte ASC, c.heure_debut ASC
@@ -99,63 +101,8 @@ func GetPlanningBenevole(w http.ResponseWriter, r *http.Request) {
 	}
 	rows.Close()
 
-	// Collectes en attente
-	rowsAttenteCollectes, err := config.DB.Query(`
-		SELECT DISTINCT
-			c.id_collecte,
-			DATE_FORMAT(c.date_collecte, '%Y-%m-%d'),
-			TIME_FORMAT(c.heure_debut, '%H:%i'),
-			TIME_FORMAT(c.heure_fin, '%H:%i'),
-			c.adresse,
-			c.ville,
-			c.code_postal,
-			c.statut
-		FROM offre_benevole_reponse obr
-		JOIN offre_benevole ob
-			ON ob.id_offre = obr.id_offre
-		JOIN collecte c
-			ON c.id_collecte = ob.id_evenement
-		WHERE obr.id_utilisateur = ?
-		AND ob.type_evenement = 'COLLECTE'
-		AND NOT EXISTS (
-			SELECT 1
-			FROM collecte_benevole cb
-			WHERE cb.id_collecte = c.id_collecte
-			AND cb.id_utilisateur = obr.id_utilisateur
-		)
-		ORDER BY c.date_collecte ASC, c.heure_debut ASC
-	`, informations.IDUtilisateur)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	for rowsAttenteCollectes.Next() {
-		var mission MissionCollecteBenevole
-
-		if err := rowsAttenteCollectes.Scan(
-			&mission.IDCollecte,
-			&mission.DateCollecte,
-			&mission.HeureDebut,
-			&mission.HeureFin,
-			&mission.Adresse,
-			&mission.Ville,
-			&mission.CodePostal,
-			&mission.Statut,
-		); err != nil {
-			rowsAttenteCollectes.Close()
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		mission.StatutParticipation = "EN_ATTENTE"
-		collectes = append(collectes, mission)
-	}
-	rowsAttenteCollectes.Close()
-
 	services := []ServiceBenevole{}
 
-	// Services déjà acceptés
 	rowsServices, err := config.DB.Query(`
 		SELECT
 			s.id_service,
@@ -167,90 +114,38 @@ func GetPlanningBenevole(w http.ResponseWriter, r *http.Request) {
 			s.statut,
 			sb.role_service
 		FROM service_benevole sb
-		JOIN service s
+		INNER JOIN service s
 			ON s.id_service = sb.id_service
 		WHERE sb.id_utilisateur = ?
 		ORDER BY s.date_service ASC, s.heure_debut ASC
 	`, informations.IDUtilisateur)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
 
-	for rowsServices.Next() {
-		var service ServiceBenevole
+	// Une erreur sur la partie services ne doit pas faire disparaître
+	// les collectes déjà affectées du planning.
+	if err == nil {
+		for rowsServices.Next() {
+			var service ServiceBenevole
 
-		if err := rowsServices.Scan(
-			&service.IDService,
-			&service.Nom,
-			&service.Lieu,
-			&service.DateService,
-			&service.HeureDebut,
-			&service.HeureFin,
-			&service.StatutService,
-			&service.RoleService,
-		); err != nil {
-			rowsServices.Close()
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
+			if err := rowsServices.Scan(
+				&service.IDService,
+				&service.Nom,
+				&service.Lieu,
+				&service.DateService,
+				&service.HeureDebut,
+				&service.HeureFin,
+				&service.StatutService,
+				&service.RoleService,
+			); err != nil {
+				rowsServices.Close()
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			service.StatutParticipation = "AFFECTE"
+			services = append(services, service)
 		}
-
-		service.StatutParticipation = "AFFECTE"
-		services = append(services, service)
+		rowsServices.Close()
 	}
-	rowsServices.Close()
-
-	// Services en attente
-	rowsAttenteServices, err := config.DB.Query(`
-		SELECT DISTINCT
-			s.id_service,
-			s.nom,
-			COALESCE(s.lieu, ''),
-			COALESCE(DATE_FORMAT(s.date_service, '%Y-%m-%d'), ''),
-			COALESCE(TIME_FORMAT(s.heure_debut, '%H:%i'), ''),
-			COALESCE(TIME_FORMAT(s.heure_fin, '%H:%i'), ''),
-			s.statut
-		FROM offre_benevole_reponse obr
-		JOIN offre_benevole ob
-			ON ob.id_offre = obr.id_offre
-		JOIN service s
-			ON s.id_service = ob.id_evenement
-		WHERE obr.id_utilisateur = ?
-		AND ob.type_evenement = 'SERVICE'
-		AND NOT EXISTS (
-			SELECT 1
-			FROM service_benevole sb
-			WHERE sb.id_service = s.id_service
-			AND sb.id_utilisateur = obr.id_utilisateur
-		)
-		ORDER BY s.date_service ASC, s.heure_debut ASC
-	`, informations.IDUtilisateur)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	for rowsAttenteServices.Next() {
-		var service ServiceBenevole
-
-		if err := rowsAttenteServices.Scan(
-			&service.IDService,
-			&service.Nom,
-			&service.Lieu,
-			&service.DateService,
-			&service.HeureDebut,
-			&service.HeureFin,
-			&service.StatutService,
-		); err != nil {
-			rowsAttenteServices.Close()
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		service.StatutParticipation = "EN_ATTENTE"
-		services = append(services, service)
-	}
-	rowsAttenteServices.Close()
 
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"collectes": collectes,
@@ -287,13 +182,22 @@ func AnnulerParticipationCollecte(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var dateCollecte string
+	var statutCollecte string
+
 	err := config.DB.QueryRow(`
-		SELECT DATE_FORMAT(date_collecte, '%Y-%m-%d')
+		SELECT
+			DATE_FORMAT(date_collecte, '%Y-%m-%d'),
+			statut
 		FROM collecte
 		WHERE id_collecte = ?
-	`, data.IDCollecte).Scan(&dateCollecte)
+	`, data.IDCollecte).Scan(&dateCollecte, &statutCollecte)
 	if err != nil {
 		http.Error(w, "Collecte introuvable", http.StatusNotFound)
+		return
+	}
+
+	if statutCollecte == "TERMINEE" || statutCollecte == "ANNULEE" {
+		http.Error(w, "Cette mission est clôturée et ne peut plus être annulée", http.StatusBadRequest)
 		return
 	}
 
@@ -341,6 +245,29 @@ func AnnulerParticipationCollecte(w http.ResponseWriter, r *http.Request) {
 		tx.Rollback()
 		http.Error(w, "Aucune participation ou demande trouvée pour cette collecte", http.StatusNotFound)
 		return
+	}
+
+	// Si un bénévole affecté se désiste avant la collecte, une place
+	// redevient disponible. On rouvre alors l'offre correspondante
+	// uniquement tant que la collecte peut encore être organisée.
+	if nbAffectation > 0 && (statutCollecte == "VALIDEE" || statutCollecte == "PLANIFIEE") {
+		_, err = tx.Exec(`
+			UPDATE offre_benevole ob
+			SET ob.statut = 'OUVERTE'
+			WHERE ob.type_evenement = 'COLLECTE'
+			AND ob.id_evenement = ?
+			AND ob.statut = 'FERMEE'
+			AND (
+				SELECT COUNT(*)
+				FROM collecte_benevole cb
+				WHERE cb.id_collecte = ?
+			) < ob.nombre_benevoles_requis
+		`, data.IDCollecte, data.IDCollecte)
+		if err != nil {
+			tx.Rollback()
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	if err := tx.Commit(); err != nil {

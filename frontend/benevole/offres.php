@@ -72,11 +72,42 @@ foreach ($mesReponses as $reponse) {
     $reponsesParOffre[$idOffreReponse] = array_map("intval", $jours);
 }
 
+$planningBenevole = API::get("/api/benevole/planning");
+if (!is_array($planningBenevole)) {
+    $planningBenevole = [];
+}
+
+$collectesAffectees = [];
+foreach (($planningBenevole["collectes"] ?? []) as $mission) {
+    $idCollecteAffectee = (int) ($mission["id_collecte"] ?? 0);
+    if ($idCollecteAffectee > 0) {
+        $collectesAffectees[$idCollecteAffectee] = true;
+    }
+}
+
+$servicesAffectes = [];
+foreach (($planningBenevole["services"] ?? []) as $mission) {
+    $idServiceAffecte = (int) ($mission["id_service"] ?? 0);
+    if ($idServiceAffecte > 0) {
+        $servicesAffectes[$idServiceAffecte] = true;
+    }
+}
+
 $offresOuvertes = [];
 $aujourdhui = date("Y-m-d");
 
 foreach ($offres as $offre) {
     if (($offre["statut"] ?? "") !== "OUVERTE") {
+        continue;
+    }
+
+    $typeEvenementOffre = $offre["type_evenement"] ?? "";
+    $idEvenementOffre = (int) ($offre["id_evenement"] ?? 0);
+
+    if (
+        ($typeEvenementOffre === "COLLECTE" && isset($collectesAffectees[$idEvenementOffre])) ||
+        ($typeEvenementOffre === "SERVICE" && isset($servicesAffectes[$idEvenementOffre]))
+    ) {
         continue;
     }
 

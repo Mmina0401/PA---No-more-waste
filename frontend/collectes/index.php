@@ -13,6 +13,14 @@ if (!is_array($collectes)) {
     $collectes = [];
 }
 
+$collectes = array_values(array_filter($collectes, function ($collecte) {
+    return !in_array(
+        $collecte["statut"] ?? "",
+        ["TERMINEE", "ANNULEE"],
+        true
+    );
+}));
+
 $offres = API::get("/api/offres-benevoles");
 
 if (!is_array($offres)) {
@@ -51,15 +59,17 @@ include "../includes/navbar.php";
 <h2>Gestion des Collectes</h2>
 <hr>
 
-<?php if (isset($_GET["created"]) && $_GET["created"] === "1"): ?>
-<div class="alert alert-success">
-    La collecte a été créée avec succès.
-</div>
-<?php endif; ?>
 
-<a href="ajouter.php" class="btn btn-success mb-3">
-    + Nouvelle collecte
-</a>
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <p class="text-muted mb-0">
+        Les demandes de collecte sont créées depuis l'espace public par un particulier ou un commerçant.
+    </p>
+
+    <a href="historique.php" class="btn btn-outline-secondary">
+        <i class="fa-solid fa-clock-rotate-left me-1"></i>
+        Historique
+    </a>
+</div>
 
 <?php if (empty($collectes)): ?>
 
@@ -76,8 +86,8 @@ include "../includes/navbar.php";
 <thead class="table-dark">
 <tr>
     <th>ID</th>
-    <th>Utilisateur</th>
-    <th>Véhicule</th>
+    <th>Demandeur</th>
+    <th>Véhicule attribué</th>
     <th>Date</th>
     <th>Horaires</th>
     <th>Ville</th>
@@ -98,7 +108,7 @@ $offre = $offresParCollecte[$idCollecte] ?? null;
 
 $peutCreerOffre = in_array(
     $statut,
-    ["EN_ATTENTE", "PLANIFIEE", "EN_COURS"],
+    ["VALIDEE", "PLANIFIEE", "EN_COURS"],
     true
 );
 ?>
@@ -110,14 +120,36 @@ $peutCreerOffre = in_array(
 </td>
 
 <td>
-    <?= (int) ($c["id_utilisateur"] ?? 0) ?>
+    <?php
+    $nomDemandeur = trim(
+        ($c["demandeur_prenom"] ?? "") . " " .
+        ($c["demandeur_nom"] ?? "")
+    );
+    $raisonSociale = trim((string) ($c["demandeur_raison_sociale"] ?? ""));
+    ?>
+    <strong><?= htmlspecialchars($raisonSociale !== "" ? $raisonSociale : ($nomDemandeur ?: "—")) ?></strong>
+
+    <?php if ($raisonSociale !== "" && $nomDemandeur !== ""): ?>
+        <div class="small text-muted"><?= htmlspecialchars($nomDemandeur) ?></div>
+    <?php endif; ?>
+
+    <div class="small text-muted">
+        <?= htmlspecialchars($c["demandeur_email"] ?? "") ?>
+    </div>
 </td>
 
 <td>
-    <?= !empty($c["id_vehicule"])
-        ? (int) $c["id_vehicule"]
-        : "—"
-    ?>
+    <?php if (!empty($c["id_vehicule"])): ?>
+        <strong><?= htmlspecialchars($c["vehicule_immatriculation"] ?? ("Véhicule #" . $c["id_vehicule"])) ?></strong>
+        <div class="small text-muted">
+            <?= htmlspecialchars(trim(
+                ($c["vehicule_marque"] ?? "") . " " .
+                ($c["vehicule_modele"] ?? "")
+            )) ?>
+        </div>
+    <?php else: ?>
+        <span class="text-muted">Non attribué</span>
+    <?php endif; ?>
 </td>
 
 <td>
@@ -172,6 +204,12 @@ $heureFin = substr(
 
 <span class="badge bg-warning text-dark">
     En attente
+</span>
+
+<?php elseif ($statut === "VALIDEE"): ?>
+
+<span class="badge bg-info text-dark">
+    Validée
 </span>
 
 <?php elseif ($statut === "PLANIFIEE"): ?>
@@ -268,7 +306,7 @@ $heureFin = substr(
     href="modifier.php?id=<?= $idCollecte ?>"
     class="btn btn-warning btn-sm"
 >
-    Modifier
+    Gérer
 </a>
 
 <a

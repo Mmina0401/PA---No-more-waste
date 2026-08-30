@@ -8,17 +8,9 @@ import (
 )
 
 func ArchiverEvenementsPasses() {
+	// Le statut des collectes n'est jamais changé automatiquement à partir de la date.
+	// Une collecte doit suivre le workflow métier jusqu'à TERMINEE ou ANNULEE.
 	_, err := config.DB.Exec(`
-		UPDATE collecte
-		SET statut = 'TERMINEE'
-		WHERE date_collecte < CURDATE()
-		AND statut NOT IN ('TERMINEE', 'ANNULEE')
-	`)
-	if err != nil {
-		log.Println("Erreur archivage collectes :", err)
-	}
-
-	_, err = config.DB.Exec(`
 		UPDATE service
 		SET statut = 'TERMINE'
 		WHERE date_service < CURDATE()
@@ -40,7 +32,10 @@ func ArchiverEvenementsPasses() {
 					SELECT 1
 					FROM collecte c
 					WHERE c.id_collecte = ob.id_evenement
-					AND c.date_collecte < CURDATE()
+					AND (
+						c.statut IN ('TERMINEE', 'ANNULEE')
+						OR c.date_collecte < CURDATE()
+					)
 				)
 			)
 			OR

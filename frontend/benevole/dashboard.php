@@ -42,6 +42,26 @@ if (!is_array($services)) {
     $services = [];
 }
 
+$collectesAVenir = array_values(array_filter($collectes, function ($collecte) {
+    $statut = strtoupper((string) ($collecte["statut"] ?? ""));
+    $date = substr((string) ($collecte["date_collecte"] ?? ""), 0, 10);
+
+    return
+        !in_array($statut, ["TERMINEE", "ANNULEE"], true) &&
+        $date !== "" &&
+        $date >= date("Y-m-d");
+}));
+
+$servicesAVenir = array_values(array_filter($services, function ($service) {
+    $statut = strtoupper((string) ($service["statut_service"] ?? ""));
+    $date = substr((string) ($service["date_service"] ?? ""), 0, 10);
+
+    return
+        !in_array($statut, ["TERMINE", "ANNULE"], true) &&
+        $date !== "" &&
+        $date >= date("Y-m-d");
+}));
+
 $nbOffres = count($offresOuvertes);
 $nbCollectes = count($collectes);
 $nbServices = count($services);
@@ -481,8 +501,8 @@ body {
     </div>
 
     <?php if (
-        empty($collectes) &&
-        empty($services)
+        empty($collectesAVenir) &&
+        empty($servicesAVenir)
     ): ?>
 
         <div class="empty-planning text-center p-5">
@@ -515,7 +535,7 @@ body {
         <div class="row g-3">
 
             <?php foreach (
-                array_slice($collectes, 0, 3) as $collecte
+                array_slice($collectesAVenir, 0, 3) as $collecte
             ): ?>
 
                 <div class="col-lg-4">
@@ -576,7 +596,7 @@ body {
             <?php endforeach; ?>
 
             <?php foreach (
-                array_slice($services, 0, 3) as $service
+                array_slice($servicesAVenir, 0, 3) as $service
             ): ?>
 
                 <div class="col-lg-4">

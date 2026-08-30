@@ -386,9 +386,12 @@ $dateCollecte = substr(
     10
 );
 
+$statutCollecte = strtoupper((string) ($collecte["statut"] ?? ""));
+
 $peutAnnulerCollecte =
     $dateCollecte !== "" &&
-    $dateCollecte >= date("Y-m-d");
+    $dateCollecte >= date("Y-m-d") &&
+    !in_array($statutCollecte, ["TERMINEE", "ANNULEE"], true);
 ?>
 
 <div class="col-lg-6">
@@ -518,7 +521,12 @@ Rôle :
 
 <div class="past-event">
     <i class="fa-solid fa-lock me-1"></i>
-    Cette collecte est passée, l'annulation n'est plus possible.
+
+    <?php if (in_array($statutCollecte, ["TERMINEE", "ANNULEE"], true)): ?>
+        Cette mission est clôturée, l'annulation n'est plus possible.
+    <?php else: ?>
+        Cette collecte est passée, l'annulation n'est plus possible.
+    <?php endif; ?>
 </div>
 
 <?php endif; ?>
