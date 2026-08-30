@@ -286,8 +286,53 @@ func DemanderCollectePublique(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// Crée une candidature bénévole
+// Retourne la liste des compétences disponibles pour la candidature publique.
+func GetCompetencesPubliques(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 
+	if r.Method != http.MethodGet {
+		http.Error(w, "méthode non autorisée", http.StatusMethodNotAllowed)
+		return
+	}
+
+	rows, err := config.DB.Query(`
+		SELECT id_competence, nom
+		FROM competence
+		ORDER BY nom
+	`)
+	if err != nil {
+		http.Error(w, "impossible de récupérer les compétences", http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	type CompetencePublique struct {
+		ID  int    `json:"id_competence"`
+		Nom string `json:"nom"`
+	}
+
+	competences := []CompetencePublique{}
+
+	for rows.Next() {
+		var competence CompetencePublique
+
+		if err := rows.Scan(&competence.ID, &competence.Nom); err != nil {
+			http.Error(w, "impossible de lire les compétences", http.StatusInternalServerError)
+			return
+		}
+
+		competences = append(competences, competence)
+	}
+
+	if err := rows.Err(); err != nil {
+		http.Error(w, "impossible de lire les compétences", http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(competences)
+}
+
+// Crée une candidature bénévole.
 func CandidaterBenevole(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -297,12 +342,13 @@ func CandidaterBenevole(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var candidature struct {
-		Nom        string `json:"nom"`
-		Prenom     string `json:"prenom"`
-		Email      string `json:"email"`
-		MotDePasse string `json:"mot_de_passe"`
-		Telephone  string `json:"telephone"`
-		Ville      string `json:"ville"`
+		Nom         string `json:"nom"`
+		Prenom      string `json:"prenom"`
+		Email       string `json:"email"`
+		MotDePasse  string `json:"mot_de_passe"`
+		Telephone   string `json:"telephone"`
+		Ville       string `json:"ville"`
+		Competences []int  `json:"competences"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&candidature); err != nil {
@@ -316,34 +362,132 @@ func CandidaterBenevole(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if len(candidature.Competences) == 0 {
+		http.Error(w, "au moins une compétence doit être sélectionnée", http.StatusBadRequest)
+		return
+	}
+
 	var idExistant int
 	err := config.DB.QueryRow(`
-		SELECT id_utilisateur FROM utilisateur WHERE email = ?
+		SELECT id_utilisateur
+		FROM utilisateur
+		WHERE email = ?
 	`, candidature.Email).Scan(&idExistant)
+
 	if err == nil {
 		http.Error(w, "un compte existe déjà avec cet email", http.StatusConflict)
 		return
 	}
 
-	hash, err := bcrypt.GenerateFromPassword([]byte(candidature.MotDePasse), bcrypt.DefaultCost)
+	if err != sql.ErrNoRows {
+		http.Error(w, "erreur lors de la vérification de l'email", http.StatusInternalServerError)
+		return
+	}
+
+	hash, err := bcrypt.GenerateFromPassword(
+		[]byte(candidature.MotDePasse),
+		bcrypt.DefaultCost,
+	)
 	if err != nil {
 		http.Error(w, "erreur lors du chiffrement du mot de passe", http.StatusInternalServerError)
 		return
 	}
 
-	_, err = config.DB.Exec(`
+	tx, err := config.DB.Begin()
+	if err != nil {
+		http.Error(w, "impossible de démarrer l'enregistrement", http.StatusInternalServerError)
+		return
+	}
+
+	resultat, err := tx.Exec(`
 		INSERT INTO utilisateur (
-			nom, prenom, email, mot_de_passe, telephone, ville, role, actif
+			nom,
+			prenom,
+			email,
+			mot_de_passe,
+			telephone,
+			ville,
+			role,
+			actif
 		)
 		VALUES (?, ?, ?, ?, ?, ?, 'BENEVOLE', FALSE)
-	`, candidature.Nom, candidature.Prenom, candidature.Email,
-		string(hash), candidature.Telephone, candidature.Ville)
+	`,
+		candidature.Nom,
+		candidature.Prenom,
+		candidature.Email,
+		string(hash),
+		candidature.Telephone,
+		candidature.Ville,
+	)
 	if err != nil {
+		tx.Rollback()
 		http.Error(w, "impossible d'enregistrer la candidature", http.StatusInternalServerError)
 		return
 	}
 
+	idUtilisateur, err := resultat.LastInsertId()
+	if err != nil {
+		tx.Rollback()
+		http.Error(w, "impossible de récupérer la candidature créée", http.StatusInternalServerError)
+		return
+	}
+
+	competencesDejaTraitees := make(map[int]bool)
+
+	for _, idCompetence := range candidature.Competences {
+
+		if idCompetence <= 0 || competencesDejaTraitees[idCompetence] {
+			continue
+		}
+
+		var existe int
+		err := tx.QueryRow(`
+			SELECT COUNT(*)
+			FROM competence
+			WHERE id_competence = ?
+		`, idCompetence).Scan(&existe)
+
+		if err != nil {
+			tx.Rollback()
+			http.Error(w, "impossible de vérifier les compétences", http.StatusInternalServerError)
+			return
+		}
+
+		if existe == 0 {
+			tx.Rollback()
+			http.Error(w, "compétence invalide", http.StatusBadRequest)
+			return
+		}
+
+		_, err = tx.Exec(`
+			INSERT INTO benevole_competence (
+				id_utilisateur,
+				id_competence
+			)
+			VALUES (?, ?)
+		`, idUtilisateur, idCompetence)
+
+		if err != nil {
+			tx.Rollback()
+			http.Error(w, "impossible d'enregistrer les compétences", http.StatusInternalServerError)
+			return
+		}
+
+		competencesDejaTraitees[idCompetence] = true
+	}
+
+	if len(competencesDejaTraitees) == 0 {
+		tx.Rollback()
+		http.Error(w, "au moins une compétence valide doit être sélectionnée", http.StatusBadRequest)
+		return
+	}
+
+	if err := tx.Commit(); err != nil {
+		http.Error(w, "impossible de valider la candidature", http.StatusInternalServerError)
+		return
+	}
+
 	json.NewEncoder(w).Encode(map[string]string{
-		"message": "Candidature enregistrée, un administrateur va l'examiner",
+		"message": "Candidature enregistrée avec vos compétences. Un administrateur va maintenant l'examiner.",
 	})
 }

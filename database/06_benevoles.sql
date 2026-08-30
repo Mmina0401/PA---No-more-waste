@@ -41,3 +41,4 @@ INSERT INTO competence (nom) VALUES
 ('Bricolage'),
 ('Logistique'),
 ('Manutention');
+('Nettoyage / Hygiène');
