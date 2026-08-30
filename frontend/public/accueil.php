@@ -821,7 +821,7 @@ body {
     class="nmw-contact-link nmw-contact-phone"
 >
     <i class="fa-solid fa-phone"></i>
-    <span>01 84 80 20 20</span>
+    <span>01 84 45 20 20</span>
 </a>
 
 <a
@@ -829,7 +829,7 @@ body {
     class="nmw-contact-link nmw-contact-mail"
 >
     <i class="fa-solid fa-envelope"></i>
-    <span>contact@nomorewaste.fr</span>
+    <span>nomorewaste@gmail.com</span>
 </a>
 
 </div>
