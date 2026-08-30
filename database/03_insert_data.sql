@@ -1,7 +1,6 @@
 SET NAMES utf8mb4;
 USE no_more_waste;
 
-/*insertion  dans la table categorie_produit*/
 INSERT INTO categorie_produit (nom, description) 
 VALUES
 ('Produits laitiers','Lait, yaourts, fromage'),
@@ -12,7 +11,7 @@ VALUES
 ('Hygiène','Produits d''hygiène'),
 ('Boulangerie','Pain et viennoiseries');
 
-/*insertion des données dans la table vehicule*/
+
 INSERT INTO vehicule
 /* Mmina : j'ai modifié capacite_kg en capacite */
 (immatriculation,marque,modele,capacite)
@@ -31,12 +30,60 @@ VALUES
 
 
 INSERT INTO service
-(nom,description,lieu,date_service,heure_debut,heure_fin,capacite_max)
+(nom,description,lieu,date_service,heure_debut,heure_fin,capacite_max,statut)
 VALUES
-('Cuisine solidaire','Préparation de repas','Nantes','2026-08-01','09:00','12:00',20),
-('Réparation vélo','Atelier réparation','Nantes','2026-08-05','14:00','17:00',15);
+(
+    'Cuisine solidaire',
+    'Atelier de préparation de repas anti-gaspillage',
+    'Nantes',
+    DATE_ADD(CURDATE(), INTERVAL 7 DAY),
+    '09:00',
+    '12:00',
+    20,
+    'OUVERT'
+),
+(
+    'Réparation vélo',
+    'Atelier pour apprendre à réparer et entretenir son vélo',
+    'Nantes',
+    DATE_ADD(CURDATE(), INTERVAL 10 DAY),
+    '14:00',
+    '17:00',
+    15,
+    'OUVERT'
+),
+(
+    'Atelier anti-gaspillage',
+    'Conseils pratiques pour réduire le gaspillage alimentaire au quotidien',
+    'Nantes',
+    DATE_ADD(CURDATE(), INTERVAL 14 DAY),
+    '10:00',
+    '12:00',
+    25,
+    'OUVERT'
+),
+(
+    'Initiation bricolage',
+    'Atelier pratique pour apprendre les bases du bricolage et de la réparation',
+    'Nantes',
+    DATE_ADD(CURDATE(), INTERVAL 18 DAY),
+    '13:30',
+    '16:30',
+    12,
+    'OUVERT'
+),
+(
+    'Atelier plomberie',
+    'Initiation aux petites réparations de plomberie du quotidien',
+    'Nantes',
+    DATE_ADD(CURDATE(), INTERVAL 21 DAY),
+    '09:30',
+    '11:30',
+    10,
+    'OUVERT'
+);
 
-/*insertion  dans la table utilisateur*/
+
 INSERT INTO utilisateur
 (nom,prenom,email,mot_de_passe,role)
 
@@ -48,7 +95,7 @@ VALUES
 ('Durand','Sophie','sophie@nomorewaste.fr','password','RESPONSABLE'),
 ('Carrefour','Nantes','carrefour@nomorewaste.fr','password','COMMERCANT');
 
-/*insertion  dans la table produit*/
+
 INSERT INTO produit
 (nom,description,code_barre,id_categorie,unite,poids)
 
@@ -60,7 +107,7 @@ VALUES
 ('Haricots verts','Conserve 400g','376000000004',4,'PIECE',0.4),
 ('Eau minérale','Bouteille 1.5L','376000000005',5,'LITRE',1.5);
 
-/*insertion des données dans la table adhesion*/
+
 INSERT INTO adhesion
 (id_utilisateur,date_debut,date_fin,montant,statut)
 
@@ -68,7 +115,6 @@ VALUES
 (5,'2025-01-01','2025-12-31',50.00,'EXPIREE'),
 (5,'2026-01-01','2026-12-31',50.00,'ACTIVE');
 
-/*insertion dans la table stock*/
 INSERT INTO stock
 (id_produit,quantite,emplacement)
 
