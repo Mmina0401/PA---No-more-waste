@@ -1,3 +1,4 @@
+// API ARCHIVAGE — Archivage et évolutions automatiques — Gestion des éléments anciens
 package handlers
 
 import (

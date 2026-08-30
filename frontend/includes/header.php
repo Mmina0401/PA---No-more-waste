@@ -1,3 +1,5 @@
+<!-- INTERFACE COMMUNE — En-tête HTML + ressources communes -->
+
 <!DOCTYPE html>
 <html lang="fr">
 

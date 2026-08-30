@@ -1,4 +1,6 @@
 <?php
+// ADMIN STOCK — Suppression d'une entrée de stock
+
 session_start();
 
 require_once "../includes/api.php";

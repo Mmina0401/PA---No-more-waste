@@ -1,4 +1,6 @@
 <?php
+// TRADUCTIONS EN — Textes anglais de l'interface
+
 
 return [
     "services" => "Services",

@@ -1,3 +1,4 @@
+// API CATEGORIES — Catégories de produits — Lecture + gestion
 package handlers
 
 import (

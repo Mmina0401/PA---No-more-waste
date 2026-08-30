@@ -1,4 +1,6 @@
 <?php
+// ADMIN RAPPELS — Relances des adhésions à renouveler
+
 session_start();
 
 require_once "../includes/auth.php";

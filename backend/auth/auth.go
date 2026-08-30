@@ -1,3 +1,4 @@
+// AUTH API — Utilisateur connecté + rôles — Sécurise les routes
 package auth
 
 import (

@@ -1,4 +1,6 @@
 <?php
+// SECURITE FRONTEND — Session + contrôle des rôles autorisés
+
 
 function exigerConnexion()
 {

@@ -1,3 +1,4 @@
+// API PRODUITS — Catalogue des produits — Informations générales des produits
 package handlers
 
 import (

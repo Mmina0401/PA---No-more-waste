@@ -1,3 +1,4 @@
+// BACKEND — Point d'entrée — Démarre l'API Go
 package main
 
 import (

@@ -1,4 +1,6 @@
 <?php
+// ADMIN COLLECTES — Gestion d'une collecte — Statut + véhicule + produits récupérés
+
 session_start();
 
 require_once "../includes/auth.php";

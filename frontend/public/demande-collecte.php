@@ -1,4 +1,6 @@
 <?php
+// PUBLIC — Formulaire de demande de collecte particulier/commerçant
+
 session_start();
 
 require_once __DIR__ . "/../includes/api.php";

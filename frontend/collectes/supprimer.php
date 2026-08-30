@@ -1,4 +1,6 @@
 <?php
+// ADMIN COLLECTES — Suppression d'une collecte
+
 session_start();
 
 require_once "../includes/api.php";

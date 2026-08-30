@@ -1,4 +1,6 @@
 <?php
+// ADMIN STOCK — Liste des produits disponibles + recherche
+
 
 session_start();
 

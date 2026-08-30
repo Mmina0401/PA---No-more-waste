@@ -1,3 +1,4 @@
+// API PLANNING — Données utilisées pour organiser le planning des bénévoles
 package handlers
 
 import (

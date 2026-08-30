@@ -1,3 +1,4 @@
+// API SERVICES — Gestion des services et ateliers de l'association
 package handlers
 
 import (

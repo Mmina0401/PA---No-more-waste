@@ -1,3 +1,4 @@
+// API COLLECTES — Logique métier des collectes — CRUD + changements de statut
 package handlers
 
 import (

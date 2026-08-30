@@ -1,4 +1,6 @@
 <?php
+// ADMIN COMMERCANTS — Liste et gestion des comptes commerçants
+
 session_start();
 
 require_once "../includes/auth.php";

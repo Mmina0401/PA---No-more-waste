@@ -1,4 +1,6 @@
 <?php
+// ADMIN BENEVOLES — Gestion des bénévoles — Modification + suppression + compétences
+
 session_start();
 
 require_once "../includes/auth.php";

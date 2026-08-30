@@ -1,4 +1,6 @@
 <?php
+// FRONTEND — Point d'entrée — Redirection selon le rôle connecté
+
 session_start();
 
 if (!isset($_SESSION["utilisateur"])) {

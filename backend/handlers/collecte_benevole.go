@@ -1,3 +1,4 @@
+// API AFFECTATION BENEVOLE/COLLECTE — Affectation réelle d'un bénévole à une collecte
 package handlers
 
 import (

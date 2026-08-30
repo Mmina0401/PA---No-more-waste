@@ -1,4 +1,6 @@
 <?php
+// PUBLIC — Liste des services + inscription des commerçants adhérents
+
 session_start();
 
 require_once __DIR__ . "/../includes/api.php";

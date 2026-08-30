@@ -1,3 +1,4 @@
+// API ADHESIONS — Gestion des adhésions commerçants — Création + statut + expiration
 package handlers
 
 import (

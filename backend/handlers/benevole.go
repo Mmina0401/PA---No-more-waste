@@ -1,3 +1,4 @@
+// API BENEVOLES — Espace bénévole — Planning + participations + annulations
 package handlers
 
 import (

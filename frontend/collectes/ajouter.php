@@ -1,4 +1,6 @@
 <?php
+// ADMIN COLLECTES — Création manuelle d'une collecte
+
 session_start();
 
 require_once "../includes/auth.php";

@@ -1,4 +1,6 @@
 <?php
+// ADMIN OFFRES BENEVOLES — Création d'une mission pour rechercher des bénévoles
+
 session_start();
 
 require_once "../includes/auth.php";

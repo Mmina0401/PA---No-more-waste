@@ -1,4 +1,6 @@
 <?php
+// ADMIN SERVICES — Gestion des inscriptions à un service
+
 session_start();
 
 require_once "../includes/auth.php";

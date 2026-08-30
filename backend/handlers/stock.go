@@ -1,3 +1,4 @@
+// API MOUVEMENTS STOCK — Historique des entrées, sorties et corrections de stock
 package handlers
 
 import (

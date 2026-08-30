@@ -1,4 +1,6 @@
 <?php
+// LANGUES — Sélection et chargement de la langue active
+
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();

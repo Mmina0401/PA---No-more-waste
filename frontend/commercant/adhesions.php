@@ -1,4 +1,6 @@
 <?php
+// ADMIN COMMERCANTS — Adhésions d'un commerçant — Création + suivi
+
 session_start();
 
 require_once "../includes/auth.php";

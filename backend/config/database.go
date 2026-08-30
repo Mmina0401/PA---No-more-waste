@@ -1,3 +1,4 @@
+// DATABASE — Connexion MySQL — Ouvre la connexion utilisée par l'API
 package config
 
 import (

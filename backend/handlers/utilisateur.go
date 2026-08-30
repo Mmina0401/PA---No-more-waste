@@ -1,3 +1,4 @@
+// API UTILISATEURS — Gestion générale des comptes utilisateurs
 package handlers
 
 import (

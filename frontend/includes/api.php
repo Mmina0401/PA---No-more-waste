@@ -1,4 +1,6 @@
 <?php
+// COMMUNICATION API — PHP vers API Go — GET + POST + PUT + DELETE
+
 
 class API
 {

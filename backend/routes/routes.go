@@ -1,3 +1,4 @@
+// ROUTES API — URL → Handler — Point de repère pour retrouver une fonctionnalité
 package routes
 
 import (

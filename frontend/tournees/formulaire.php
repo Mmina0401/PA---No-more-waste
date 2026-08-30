@@ -1,4 +1,6 @@
 <?php
+// ADMIN TOURNEES — Création/modification d'une livraison + produits distribués
+
 session_start();
 
 require_once "../includes/auth.php";

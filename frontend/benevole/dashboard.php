@@ -1,4 +1,6 @@
 <?php
+// BENEVOLE — Tableau de bord — Résumé + prochaines activités
+
 session_start();
 
 require_once __DIR__ . "/../includes/auth.php";

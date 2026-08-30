@@ -1,3 +1,4 @@
+// API STOCK — Quantités actuellement disponibles dans le stock
 package handlers
 
 import (

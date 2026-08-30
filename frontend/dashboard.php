@@ -1,4 +1,6 @@
 <?php
+// ADMIN — Tableau de bord principal — Statistiques collectes + stocks + produits
+
 session_start();
 require_once __DIR__ . "/includes/auth.php";
 exigerRole("ADMIN", "RESPONSABLE");

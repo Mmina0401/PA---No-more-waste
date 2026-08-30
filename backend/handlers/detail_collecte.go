@@ -1,3 +1,4 @@
+// API PRODUITS COLLECTES — Produits réellement récupérés — Ajout au stock après collecte
 package handlers
 
 import (

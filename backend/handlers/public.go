@@ -1,3 +1,4 @@
+// API PUBLIC — Traitement des formulaires accessibles sans connexion
 package handlers
 
 import (

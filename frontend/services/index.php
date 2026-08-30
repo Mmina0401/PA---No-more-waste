@@ -1,4 +1,6 @@
 <?php
+// ADMIN SERVICES — Liste et gestion des services + besoins bénévoles
+
 session_start();
 
 require_once "../includes/auth.php";

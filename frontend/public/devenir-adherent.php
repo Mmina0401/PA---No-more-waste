@@ -1,4 +1,6 @@
 <?php
+// PUBLIC — Formulaire de demande d'adhésion commerçant
+
 session_start();
 
 require_once __DIR__ . "/../includes/api.php";

@@ -1,3 +1,4 @@
+// API COMMERCANTS — Gestion des comptes et informations commerçants
 package handlers
 
 import (
