@@ -373,6 +373,70 @@ body {
     font-size: 14px;
 }
 
+
+.nmw-contact {
+    padding: 0 0 72px;
+}
+
+.nmw-contact-panel {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 28px 32px;
+    border: 1px solid var(--nmw-border);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, .9);
+    box-shadow: 0 15px 40px rgba(38, 82, 56, .07);
+}
+
+.nmw-contact-title {
+    margin: 0 0 6px;
+    font-family: "Roboto Condensed", "Arial Narrow", Arial, sans-serif;
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--nmw-text);
+}
+
+.nmw-contact-text {
+    margin: 0;
+    color: var(--nmw-muted);
+}
+
+.nmw-contact-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.nmw-contact-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    padding: 11px 15px;
+    border-radius: 12px;
+    text-decoration: none;
+    font-weight: 700;
+    transition: transform .2s ease, box-shadow .2s ease;
+}
+
+.nmw-contact-link:hover {
+    transform: translateY(-1px);
+    text-decoration: none;
+}
+
+.nmw-contact-phone {
+    color: #fff;
+    background: var(--nmw-green);
+    box-shadow: 0 10px 22px rgba(46, 125, 50, .16);
+}
+
+.nmw-contact-mail {
+    color: var(--nmw-blue);
+    background: rgba(185, 227, 243, .28);
+    border: 1px solid rgba(43, 122, 155, .16);
+}
+
 @media (max-width: 767.98px) {
     .nmw-hero {
         padding-top: 48px;
@@ -384,6 +448,21 @@ body {
 
     .nmw-values-panel {
         grid-template-columns: 1fr;
+    }
+
+    .nmw-contact-panel {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 24px;
+    }
+
+    .nmw-contact-links {
+        width: 100%;
+    }
+
+    .nmw-contact-link {
+        width: 100%;
+        justify-content: center;
     }
 
     .nmw-value + .nmw-value {
@@ -711,6 +790,47 @@ body {
 <span>
     <?= t("home_local_action_text") ?>
 </span>
+
+</div>
+
+</div>
+
+</div>
+</section>
+
+
+<section class="nmw-contact">
+<div class="container">
+
+<div class="nmw-contact-panel">
+
+<div>
+    <h2 class="nmw-contact-title">
+        Contact
+    </h2>
+
+    <p class="nmw-contact-text">
+        Une question ou besoin d'aide ? Contactez directement No More Waste.
+    </p>
+</div>
+
+<div class="nmw-contact-links">
+
+<a
+    href="tel:0184802020"
+    class="nmw-contact-link nmw-contact-phone"
+>
+    <i class="fa-solid fa-phone"></i>
+    <span>01 84 80 20 20</span>
+</a>
+
+<a
+    href="mailto:contact@nomorewaste.fr"
+    class="nmw-contact-link nmw-contact-mail"
+>
+    <i class="fa-solid fa-envelope"></i>
+    <span>contact@nomorewaste.fr</span>
+</a>
 
 </div>
 
