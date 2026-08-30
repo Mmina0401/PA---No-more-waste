@@ -8,8 +8,6 @@ import (
 )
 
 func ArchiverEvenementsPasses() {
-	// Le statut des collectes n'est jamais changé automatiquement à partir de la date.
-	// Une collecte doit suivre le workflow métier jusqu'à TERMINEE ou ANNULEE.
 	_, err := config.DB.Exec(`
 		UPDATE service
 		SET statut = 'TERMINE'

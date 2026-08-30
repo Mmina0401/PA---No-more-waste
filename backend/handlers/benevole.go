@@ -36,7 +36,6 @@ type ServiceBenevole struct {
 	StatutParticipation string `json:"statut_participation"`
 }
 
-// Récupère le planning du bénévole connecté
 func GetPlanningBenevole(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -46,9 +45,6 @@ func GetPlanningBenevole(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Le planning contient uniquement les missions réellement affectées
-	// au bénévole connecté. Une simple réponse à une offre n'est pas
-	// considérée comme une affectation.
 	collectes := []MissionCollecteBenevole{}
 
 	rows, err := config.DB.Query(`
@@ -120,8 +116,6 @@ func GetPlanningBenevole(w http.ResponseWriter, r *http.Request) {
 		ORDER BY s.date_service ASC, s.heure_debut ASC
 	`, informations.IDUtilisateur)
 
-	// Une erreur sur la partie services ne doit pas faire disparaître
-	// les collectes déjà affectées du planning.
 	if err == nil {
 		for rowsServices.Next() {
 			var service ServiceBenevole
@@ -247,9 +241,6 @@ func AnnulerParticipationCollecte(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Si un bénévole affecté se désiste avant la collecte, une place
-	// redevient disponible. On rouvre alors l'offre correspondante
-	// uniquement tant que la collecte peut encore être organisée.
 	if nbAffectation > 0 && (statutCollecte == "VALIDEE" || statutCollecte == "PLANIFIEE") {
 		_, err = tx.Exec(`
 			UPDATE offre_benevole ob
