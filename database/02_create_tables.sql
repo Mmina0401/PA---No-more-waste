@@ -31,6 +31,12 @@ CREATE TABLE utilisateur (
 
     actif BOOLEAN DEFAULT TRUE,
 
+    statut_compte ENUM(
+        'EN_ATTENTE',
+        'ACTIF',
+        'DESACTIVE'
+    ) NOT NULL DEFAULT 'ACTIF',
+
     date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     
     

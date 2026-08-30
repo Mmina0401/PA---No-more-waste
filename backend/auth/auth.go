@@ -54,7 +54,9 @@ type cleContexte string
 
 const cleInformationsConnecte cleContexte = "informationsConnecte"
 
-// Vérifie que l'utilisateur est connecté
+// Vérifie que l'utilisateur est connecté.
+// Le compte est relu en base afin qu'une désactivation prenne effet immédiatement,
+// même si l'utilisateur possède encore un JWT valide.
 func VerifierConnexion(suite http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		enTete := r.Header.Get("Authorization")
@@ -69,6 +71,45 @@ func VerifierConnexion(suite http.HandlerFunc) http.HandlerFunc {
 		informations, err := VerifierJeton(jetonTexte)
 		if err != nil {
 			http.Error(w, "jeton invalide ou expiré", http.StatusUnauthorized)
+			return
+		}
+
+		var compteActif bool
+		var statutCompte string
+
+		err = config.DB.QueryRow(`
+			SELECT actif, statut_compte
+			FROM utilisateur
+			WHERE id_utilisateur = ?
+		`, informations.IDUtilisateur).Scan(&compteActif, &statutCompte)
+
+		if err != nil {
+			http.Error(w, "compte introuvable", http.StatusUnauthorized)
+			return
+		}
+
+		if !compteActif || (informations.Role == "COMMERCANT" && statutCompte != "ACTIF") {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusForbidden)
+
+			message := "Ce compte n'est pas actif."
+			codeErreur := "COMPTE_INACTIF"
+
+			if informations.Role == "COMMERCANT" {
+				switch statutCompte {
+				case "EN_ATTENTE":
+					message = "Votre demande de compte commerçant est en attente de validation par un administrateur."
+					codeErreur = "COMPTE_EN_ATTENTE"
+				case "DESACTIVE":
+					message = "Votre compte commerçant a été désactivé. Contactez un responsable de l'association."
+					codeErreur = "COMPTE_DESACTIVE"
+				}
+			}
+
+			json.NewEncoder(w).Encode(map[string]string{
+				"error":   codeErreur,
+				"message": message,
+			})
 			return
 		}
 
@@ -120,10 +161,11 @@ func Connexion(w http.ResponseWriter, r *http.Request) {
 
 	var idUtilisateur int
 	var nom, prenom, email, role, motDePasseEnBase string
+	var statutCompte string
 	var compteActif bool
 
 	err := config.DB.QueryRow(`
-		SELECT id_utilisateur, nom, prenom, email, mot_de_passe, role, actif
+		SELECT id_utilisateur, nom, prenom, email, mot_de_passe, role, actif, statut_compte
 		FROM utilisateur
 		WHERE email = ?
 	`, identifiants.Email).Scan(
@@ -134,6 +176,7 @@ func Connexion(w http.ResponseWriter, r *http.Request) {
 		&motDePasseEnBase,
 		&role,
 		&compteActif,
+		&statutCompte,
 	)
 
 	if err != nil {
@@ -190,12 +233,26 @@ func Connexion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !compteActif {
-		message := "Votre candidature bénévole est en attente de validation par un administrateur."
-
-		if role == "COMMERCANT" {
-			message = "Votre demande de compte commerçant est en attente de validation par un administrateur."
+	if role == "COMMERCANT" {
+		if statutCompte == "EN_ATTENTE" {
+			w.WriteHeader(http.StatusForbidden)
+			json.NewEncoder(w).Encode(map[string]string{
+				"error":   "COMPTE_EN_ATTENTE",
+				"message": "Votre demande de compte commerçant est en attente de validation par un administrateur.",
+			})
+			return
 		}
+
+		if statutCompte == "DESACTIVE" || !compteActif {
+			w.WriteHeader(http.StatusForbidden)
+			json.NewEncoder(w).Encode(map[string]string{
+				"error":   "COMPTE_DESACTIVE",
+				"message": "Votre compte commerçant a été désactivé. Contactez un responsable de l'association.",
+			})
+			return
+		}
+	} else if !compteActif {
+		message := "Votre candidature bénévole est en attente de validation par un administrateur."
 
 		w.WriteHeader(http.StatusForbidden)
 

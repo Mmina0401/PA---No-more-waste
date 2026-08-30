@@ -186,7 +186,7 @@ func DemanderAdhesionCommercant(w http.ResponseWriter, r *http.Request) {
 			UPDATE utilisateur
 			SET nom = ?, prenom = ?, mot_de_passe = ?, telephone = ?,
 				adresse = ?, ville = ?, code_postal = ?,
-				role = 'COMMERCANT', actif = FALSE,
+				role = 'COMMERCANT', actif = FALSE, statut_compte = 'EN_ATTENTE',
 				raison_sociale = ?, siret = ?, secteur_activite = ?
 			WHERE id_utilisateur = ?
 		`, demande.Nom, demande.Prenom, string(hash), demande.Telephone,
@@ -201,9 +201,9 @@ func DemanderAdhesionCommercant(w http.ResponseWriter, r *http.Request) {
 		_, err = config.DB.Exec(`
 			INSERT INTO utilisateur (
 				nom, prenom, email, mot_de_passe, telephone, adresse, ville, code_postal,
-				role, actif, raison_sociale, siret, secteur_activite
+				role, actif, statut_compte, raison_sociale, siret, secteur_activite
 			)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'COMMERCANT', FALSE, ?, ?, ?)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'COMMERCANT', FALSE, 'EN_ATTENTE', ?, ?, ?)
 		`, demande.Nom, demande.Prenom, demande.Email, string(hash), demande.Telephone,
 			demande.Adresse, demande.Ville, demande.CodePostal,
 			demande.RaisonSociale, demande.Siret, demande.SecteurActivite)

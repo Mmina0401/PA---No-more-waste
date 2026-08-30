@@ -242,7 +242,10 @@ func GetAdherentsActifs(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(adherents)
 }
 
-// Active ou désactive un compte commerçant
+// Met à jour le statut d'un compte commerçant.
+// EN_ATTENTE = demande jamais validée
+// ACTIF = compte validé et utilisable
+// DESACTIVE = ancien compte validé, volontairement désactivé
 func ChangerStatutCommercant(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -252,23 +255,35 @@ func ChangerStatutCommercant(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var demande struct {
-		IDUtilisateur int  `json:"id_utilisateur"`
-		Actif         bool `json:"actif"`
+		IDUtilisateur int    `json:"id_utilisateur"`
+		StatutCompte  string `json:"statut_compte"`
 	}
+
 	if err := json.NewDecoder(r.Body).Decode(&demande); err != nil {
 		http.Error(w, "JSON invalide", http.StatusBadRequest)
 		return
 	}
+
 	if demande.IDUtilisateur <= 0 {
 		http.Error(w, "commerçant invalide", http.StatusBadRequest)
 		return
 	}
 
+	switch demande.StatutCompte {
+	case "ACTIF", "DESACTIVE":
+	default:
+		http.Error(w, "statut de compte invalide", http.StatusBadRequest)
+		return
+	}
+
+	actif := demande.StatutCompte == "ACTIF"
+
 	resultat, err := config.DB.Exec(`
 		UPDATE utilisateur
-		SET actif = ?
+		SET actif = ?, statut_compte = ?
 		WHERE id_utilisateur = ? AND role = 'COMMERCANT'
-	`, demande.Actif, demande.IDUtilisateur)
+	`, actif, demande.StatutCompte, demande.IDUtilisateur)
+
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

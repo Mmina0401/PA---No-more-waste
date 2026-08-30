@@ -21,6 +21,7 @@ type Utilisateur struct {
 	CodePostal   *string   `json:"code_postal"`
 	Role         string    `json:"role"`
 	Actif        bool      `json:"actif"`
+	StatutCompte string    `json:"statut_compte"`
 	DateCreation time.Time `json:"date_creation"`
 
 	RaisonSociale   *string `json:"raison_sociale"`
@@ -35,7 +36,7 @@ func GetUtilisateurs(w http.ResponseWriter, r *http.Request) {
 		SELECT
 			id_utilisateur, nom, prenom, email, mot_de_passe,
 			telephone, adresse, ville, code_postal,
-			role, actif, date_creation,
+			role, actif, statut_compte, date_creation,
 			raison_sociale, siret, secteur_activite
 		FROM utilisateur
 	`
@@ -61,7 +62,7 @@ func GetUtilisateurs(w http.ResponseWriter, r *http.Request) {
 		err := rows.Scan(
 			&u.ID, &u.Nom, &u.Prenom, &u.Email, &u.MotDePasse,
 			&u.Telephone, &u.Adresse, &u.Ville, &u.CodePostal,
-			&u.Role, &u.Actif, &u.DateCreation,
+			&u.Role, &u.Actif, &u.StatutCompte, &u.DateCreation,
 			&u.RaisonSociale, &u.Siret, &u.SecteurActivite,
 		)
 		if err != nil {
@@ -90,14 +91,14 @@ func GetUtilisateur(w http.ResponseWriter, r *http.Request) {
 		SELECT
 			id_utilisateur, nom, prenom, email, mot_de_passe,
 			telephone, adresse, ville, code_postal,
-			role, actif, date_creation,
+			role, actif, statut_compte, date_creation,
 			raison_sociale, siret, secteur_activite
 		FROM utilisateur
 		WHERE id_utilisateur = ?
 	`, id).Scan(
 		&u.ID, &u.Nom, &u.Prenom, &u.Email, &u.MotDePasse,
 		&u.Telephone, &u.Adresse, &u.Ville, &u.CodePostal,
-		&u.Role, &u.Actif, &u.DateCreation,
+		&u.Role, &u.Actif, &u.StatutCompte, &u.DateCreation,
 		&u.RaisonSociale, &u.Siret, &u.SecteurActivite,
 	)
 	if err != nil {
@@ -140,15 +141,18 @@ func CreateUtilisateur(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	u.Actif = true
+	u.StatutCompte = "ACTIF"
+
 	result, err := config.DB.Exec(`
 		INSERT INTO utilisateur(
 			nom, prenom, email, mot_de_passe, telephone, adresse, ville, code_postal,
-			role, raison_sociale, siret, secteur_activite
+			role, actif, statut_compte, raison_sociale, siret, secteur_activite
 		)
-		VALUES(?,?,?,?,?,?,?,?,?,?,?,?)
+		VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)
 	`,
 		u.Nom, u.Prenom, u.Email, string(hash), u.Telephone, u.Adresse, u.Ville, u.CodePostal,
-		u.Role, u.RaisonSociale, u.Siret, u.SecteurActivite,
+		u.Role, u.Actif, u.StatutCompte, u.RaisonSociale, u.Siret, u.SecteurActivite,
 	)
 
 	if err != nil {
