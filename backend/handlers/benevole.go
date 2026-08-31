@@ -1,4 +1,3 @@
-// API BENEVOLES — Espace bénévole — Planning + participations + annulations
 package handlers
 
 import (
@@ -48,25 +47,7 @@ func GetPlanningBenevole(w http.ResponseWriter, r *http.Request) {
 
 	collectes := []MissionCollecteBenevole{}
 
-	rows, err := config.DB.Query(`
-		SELECT
-			c.id_collecte,
-			DATE_FORMAT(c.date_collecte, '%Y-%m-%d'),
-			TIME_FORMAT(c.heure_debut, '%H:%i'),
-			TIME_FORMAT(c.heure_fin, '%H:%i'),
-			c.adresse,
-			c.ville,
-			c.code_postal,
-			c.statut,
-			cb.role_collecte,
-			COALESCE(TIME_FORMAT(cb.heure_arrivee, '%H:%i'), ''),
-			COALESCE(TIME_FORMAT(cb.heure_depart, '%H:%i'), '')
-		FROM collecte_benevole cb
-		INNER JOIN collecte c
-			ON c.id_collecte = cb.id_collecte
-		WHERE cb.id_utilisateur = ?
-		ORDER BY c.date_collecte ASC, c.heure_debut ASC
-	`, informations.IDUtilisateur)
+	rows, err := config.DB.Query(`SELECT c.id_collecte, DATE_FORMAT(c.date_collecte, '%Y-%m-%d'), TIME_FORMAT(c.heure_debut, '%H:%i'), TIME_FORMAT(c.heure_fin, '%H:%i'), c.adresse, c.ville, c.code_postal, c.statut, cb.role_collecte, COALESCE(TIME_FORMAT(cb.heure_arrivee, '%H:%i'), ''), COALESCE(TIME_FORMAT(cb.heure_depart, '%H:%i'), '') FROM collecte_benevole cb INNER JOIN collecte c ON c.id_collecte = cb.id_collecte WHERE cb.id_utilisateur = ? ORDER BY c.date_collecte ASC, c.heure_debut ASC`, informations.IDUtilisateur)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -100,22 +81,7 @@ func GetPlanningBenevole(w http.ResponseWriter, r *http.Request) {
 
 	services := []ServiceBenevole{}
 
-	rowsServices, err := config.DB.Query(`
-		SELECT
-			s.id_service,
-			s.nom,
-			COALESCE(s.lieu, ''),
-			COALESCE(DATE_FORMAT(s.date_service, '%Y-%m-%d'), ''),
-			COALESCE(TIME_FORMAT(s.heure_debut, '%H:%i'), ''),
-			COALESCE(TIME_FORMAT(s.heure_fin, '%H:%i'), ''),
-			s.statut,
-			sb.role_service
-		FROM service_benevole sb
-		INNER JOIN service s
-			ON s.id_service = sb.id_service
-		WHERE sb.id_utilisateur = ?
-		ORDER BY s.date_service ASC, s.heure_debut ASC
-	`, informations.IDUtilisateur)
+	rowsServices, err := config.DB.Query(`SELECT s.id_service, s.nom, COALESCE(s.lieu, ''), COALESCE(DATE_FORMAT(s.date_service, '%Y-%m-%d'), ''), COALESCE(TIME_FORMAT(s.heure_debut, '%H:%i'), ''), COALESCE(TIME_FORMAT(s.heure_fin, '%H:%i'), ''), s.statut, sb.role_service FROM service_benevole sb INNER JOIN service s ON s.id_service = sb.id_service WHERE sb.id_utilisateur = ? ORDER BY s.date_service ASC, s.heure_debut ASC`, informations.IDUtilisateur)
 
 	if err == nil {
 		for rowsServices.Next() {
@@ -179,13 +145,7 @@ func AnnulerParticipationCollecte(w http.ResponseWriter, r *http.Request) {
 	var dateCollecte string
 	var statutCollecte string
 
-	err := config.DB.QueryRow(`
-		SELECT
-			DATE_FORMAT(date_collecte, '%Y-%m-%d'),
-			statut
-		FROM collecte
-		WHERE id_collecte = ?
-	`, data.IDCollecte).Scan(&dateCollecte, &statutCollecte)
+	err := config.DB.QueryRow(`SELECT DATE_FORMAT(date_collecte, '%Y-%m-%d'), statut FROM collecte WHERE id_collecte = ?`, data.IDCollecte).Scan(&dateCollecte, &statutCollecte)
 	if err != nil {
 		http.Error(w, "Collecte introuvable", http.StatusNotFound)
 		return
@@ -207,26 +167,14 @@ func AnnulerParticipationCollecte(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resultAffectation, err := tx.Exec(`
-		DELETE FROM collecte_benevole
-		WHERE id_collecte = ?
-		AND id_utilisateur = ?
-	`, data.IDCollecte, informations.IDUtilisateur)
+	resultAffectation, err := tx.Exec(`DELETE FROM collecte_benevole WHERE id_collecte = ? AND id_utilisateur = ?`, data.IDCollecte, informations.IDUtilisateur)
 	if err != nil {
 		tx.Rollback()
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	resultDemande, err := tx.Exec(`
-		DELETE obr
-		FROM offre_benevole_reponse obr
-		INNER JOIN offre_benevole ob
-			ON ob.id_offre = obr.id_offre
-		WHERE ob.type_evenement = 'COLLECTE'
-		AND ob.id_evenement = ?
-		AND obr.id_utilisateur = ?
-	`, data.IDCollecte, informations.IDUtilisateur)
+	resultDemande, err := tx.Exec(`DELETE obr FROM offre_benevole_reponse obr INNER JOIN offre_benevole ob ON ob.id_offre = obr.id_offre WHERE ob.type_evenement = 'COLLECTE' AND ob.id_evenement = ? AND obr.id_utilisateur = ?`, data.IDCollecte, informations.IDUtilisateur)
 	if err != nil {
 		tx.Rollback()
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -243,18 +191,7 @@ func AnnulerParticipationCollecte(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if nbAffectation > 0 && (statutCollecte == "VALIDEE" || statutCollecte == "PLANIFIEE") {
-		_, err = tx.Exec(`
-			UPDATE offre_benevole ob
-			SET ob.statut = 'OUVERTE'
-			WHERE ob.type_evenement = 'COLLECTE'
-			AND ob.id_evenement = ?
-			AND ob.statut = 'FERMEE'
-			AND (
-				SELECT COUNT(*)
-				FROM collecte_benevole cb
-				WHERE cb.id_collecte = ?
-			) < ob.nombre_benevoles_requis
-		`, data.IDCollecte, data.IDCollecte)
+		_, err = tx.Exec(`UPDATE offre_benevole ob SET ob.statut = 'OUVERTE' WHERE ob.type_evenement = 'COLLECTE' AND ob.id_evenement = ? AND ob.statut = 'FERMEE' AND ( SELECT COUNT(*) FROM collecte_benevole cb WHERE cb.id_collecte = ? ) < ob.nombre_benevoles_requis`, data.IDCollecte, data.IDCollecte)
 		if err != nil {
 			tx.Rollback()
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -301,11 +238,7 @@ func AnnulerParticipationService(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var dateService string
-	err := config.DB.QueryRow(`
-		SELECT DATE_FORMAT(date_service, '%Y-%m-%d')
-		FROM service
-		WHERE id_service = ?
-	`, data.IDService).Scan(&dateService)
+	err := config.DB.QueryRow(`SELECT DATE_FORMAT(date_service, '%Y-%m-%d') FROM service WHERE id_service = ?`, data.IDService).Scan(&dateService)
 	if err != nil {
 		http.Error(w, "Service introuvable", http.StatusNotFound)
 		return
@@ -322,26 +255,14 @@ func AnnulerParticipationService(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resultAffectation, err := tx.Exec(`
-		DELETE FROM service_benevole
-		WHERE id_service = ?
-		AND id_utilisateur = ?
-	`, data.IDService, informations.IDUtilisateur)
+	resultAffectation, err := tx.Exec(`DELETE FROM service_benevole WHERE id_service = ? AND id_utilisateur = ?`, data.IDService, informations.IDUtilisateur)
 	if err != nil {
 		tx.Rollback()
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	resultDemande, err := tx.Exec(`
-		DELETE obr
-		FROM offre_benevole_reponse obr
-		INNER JOIN offre_benevole ob
-			ON ob.id_offre = obr.id_offre
-		WHERE ob.type_evenement = 'SERVICE'
-		AND ob.id_evenement = ?
-		AND obr.id_utilisateur = ?
-	`, data.IDService, informations.IDUtilisateur)
+	resultDemande, err := tx.Exec(`DELETE obr FROM offre_benevole_reponse obr INNER JOIN offre_benevole ob ON ob.id_offre = obr.id_offre WHERE ob.type_evenement = 'SERVICE' AND ob.id_evenement = ? AND obr.id_utilisateur = ?`, data.IDService, informations.IDUtilisateur)
 	if err != nil {
 		tx.Rollback()
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -381,19 +302,7 @@ type Benevole struct {
 func GetBenevoles(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	rows, err := config.DB.Query(`
-		SELECT
-			id_utilisateur,
-			nom,
-			prenom,
-			email,
-			telephone,
-			ville,
-			actif
-		FROM utilisateur
-		WHERE role = 'BENEVOLE'
-		ORDER BY nom, prenom
-	`)
+	rows, err := config.DB.Query(`SELECT id_utilisateur, nom, prenom, email, telephone, ville, actif FROM utilisateur WHERE role = 'BENEVOLE' ORDER BY nom, prenom`)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -419,14 +328,7 @@ func GetBenevoles(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		competenceRows, err := config.DB.Query(`
-			SELECT c.nom
-			FROM competence c
-			INNER JOIN benevole_competence bc
-				ON bc.id_competence = c.id_competence
-			WHERE bc.id_utilisateur = ?
-			ORDER BY c.nom
-		`, b.ID)
+		competenceRows, err := config.DB.Query(`SELECT c.nom FROM competence c INNER JOIN benevole_competence bc ON bc.id_competence = c.id_competence WHERE bc.id_utilisateur = ? ORDER BY c.nom`, b.ID)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -496,18 +398,7 @@ func UpdateBenevole(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = tx.Exec(`
-		UPDATE utilisateur
-		SET
-			nom = ?,
-			prenom = ?,
-			email = ?,
-			telephone = ?,
-			ville = ?,
-			actif = ?
-		WHERE id_utilisateur = ?
-		AND role = 'BENEVOLE'
-	`,
+	_, err = tx.Exec(`UPDATE utilisateur SET nom = ?, prenom = ?, email = ?, telephone = ?, ville = ?, actif = ? WHERE id_utilisateur = ? AND role = 'BENEVOLE'`,
 		data.Nom,
 		data.Prenom,
 		data.Email,
@@ -522,10 +413,7 @@ func UpdateBenevole(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = tx.Exec(`
-		DELETE FROM benevole_competence
-		WHERE id_utilisateur = ?
-	`, data.IDUtilisateur)
+	_, err = tx.Exec(`DELETE FROM benevole_competence WHERE id_utilisateur = ?`, data.IDUtilisateur)
 	if err != nil {
 		tx.Rollback()
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -533,11 +421,7 @@ func UpdateBenevole(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for _, idCompetence := range data.Competences {
-		_, err = tx.Exec(`
-			INSERT INTO benevole_competence
-			(id_utilisateur, id_competence)
-			VALUES (?, ?)
-		`,
+		_, err = tx.Exec(`INSERT INTO benevole_competence (id_utilisateur, id_competence) VALUES (?, ?)`,
 			data.IDUtilisateur,
 			idCompetence,
 		)
@@ -581,51 +465,35 @@ func DeleteBenevole(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = tx.Exec(`
-		DELETE FROM benevole_competence
-		WHERE id_utilisateur = ?
-	`, data.IDUtilisateur)
+	_, err = tx.Exec(`DELETE FROM benevole_competence WHERE id_utilisateur = ?`, data.IDUtilisateur)
 	if err != nil {
 		tx.Rollback()
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	_, err = tx.Exec(`
-		DELETE FROM disponibilite_benevole
-		WHERE id_utilisateur = ?
-	`, data.IDUtilisateur)
+	_, err = tx.Exec(`DELETE FROM disponibilite_benevole WHERE id_utilisateur = ?`, data.IDUtilisateur)
 	if err != nil {
 		tx.Rollback()
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	_, err = tx.Exec(`
-		DELETE FROM collecte_benevole
-		WHERE id_utilisateur = ?
-	`, data.IDUtilisateur)
+	_, err = tx.Exec(`DELETE FROM collecte_benevole WHERE id_utilisateur = ?`, data.IDUtilisateur)
 	if err != nil {
 		tx.Rollback()
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	_, err = tx.Exec(`
-		DELETE FROM service_benevole
-		WHERE id_utilisateur = ?
-	`, data.IDUtilisateur)
+	_, err = tx.Exec(`DELETE FROM service_benevole WHERE id_utilisateur = ?`, data.IDUtilisateur)
 	if err != nil {
 		tx.Rollback()
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	resultat, err := tx.Exec(`
-		DELETE FROM utilisateur
-		WHERE id_utilisateur = ?
-		AND role = 'BENEVOLE'
-	`, data.IDUtilisateur)
+	resultat, err := tx.Exec(`DELETE FROM utilisateur WHERE id_utilisateur = ? AND role = 'BENEVOLE'`, data.IDUtilisateur)
 	if err != nil {
 		tx.Rollback()
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -675,16 +543,7 @@ func AddDisponibiliteBenevole(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err := config.DB.Exec(`
-		INSERT INTO disponibilite_benevole
-		(
-			id_utilisateur,
-			date_disponibilite,
-			heure_debut,
-			heure_fin
-		)
-		VALUES (?, ?, ?, ?)
-	`,
+	_, err := config.DB.Exec(`INSERT INTO disponibilite_benevole ( id_utilisateur, date_disponibilite, heure_debut, heure_fin ) VALUES (?, ?, ?, ?)`,
 		data.IDUtilisateur,
 		data.DateDisponibilite,
 		data.HeureDebut,

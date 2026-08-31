@@ -1,4 +1,3 @@
-// API SERVICES — Gestion des services et ateliers de l'association
 package handlers
 
 import (
@@ -35,19 +34,7 @@ type InscriptionService struct {
 
 func GetServices(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	rows, err := config.DB.Query(`
-		SELECT
-			s.id_service, s.nom, s.description, s.lieu, s.date_service,
-			s.heure_debut, s.heure_fin, s.capacite_max, s.statut,
-			COUNT(CASE WHEN u.role = 'COMMERCANT' THEN 1 END) AS nb_inscrits
-		FROM service s
-		LEFT JOIN inscription_service i
-			ON i.id_service = s.id_service AND i.statut != 'ANNULE'
-		LEFT JOIN utilisateur u
-			ON u.id_utilisateur = i.id_utilisateur
-		GROUP BY s.id_service
-		ORDER BY s.date_service, s.heure_debut
-	`)
+	rows, err := config.DB.Query(`SELECT s.id_service, s.nom, s.description, s.lieu, s.date_service, s.heure_debut, s.heure_fin, s.capacite_max, s.statut, COUNT(CASE WHEN u.role = 'COMMERCANT' THEN 1 END) AS nb_inscrits FROM service s LEFT JOIN inscription_service i ON i.id_service = s.id_service AND i.statut != 'ANNULE' LEFT JOIN utilisateur u ON u.id_utilisateur = i.id_utilisateur GROUP BY s.id_service ORDER BY s.date_service, s.heure_debut`)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -79,11 +66,7 @@ func GetService(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var s Service
-	err := config.DB.QueryRow(`
-		SELECT id_service, nom, description, lieu, date_service,
-			   heure_debut, heure_fin, capacite_max, statut
-		FROM service WHERE id_service = ?
-	`, id).Scan(
+	err := config.DB.QueryRow(`SELECT id_service, nom, description, lieu, date_service, heure_debut, heure_fin, capacite_max, statut FROM service WHERE id_service = ?`, id).Scan(
 		&s.IDService, &s.Nom, &s.Description, &s.Lieu, &s.DateService,
 		&s.HeureDebut, &s.HeureFin, &s.CapaciteMax, &s.Statut,
 	)
@@ -117,10 +100,7 @@ func CreateService(w http.ResponseWriter, r *http.Request) {
 		s.Statut = "OUVERT"
 	}
 
-	result, err := config.DB.Exec(`
-		INSERT INTO service (nom, description, lieu, date_service, heure_debut, heure_fin, capacite_max, statut)
-		VALUES (?,?,?,?,?,?,?,?)
-	`, s.Nom, s.Description, s.Lieu, s.DateService, s.HeureDebut, s.HeureFin, s.CapaciteMax, s.Statut)
+	result, err := config.DB.Exec(`INSERT INTO service (nom, description, lieu, date_service, heure_debut, heure_fin, capacite_max, statut) VALUES (?,?,?,?,?,?,?,?)`, s.Nom, s.Description, s.Lieu, s.DateService, s.HeureDebut, s.HeureFin, s.CapaciteMax, s.Statut)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -151,11 +131,7 @@ func UpdateService(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err := config.DB.Exec(`
-		UPDATE service
-		SET nom=?, description=?, lieu=?, date_service=?, heure_debut=?, heure_fin=?, capacite_max=?, statut=?
-		WHERE id_service=?
-	`, s.Nom, s.Description, s.Lieu, s.DateService, s.HeureDebut, s.HeureFin, s.CapaciteMax, s.Statut, s.IDService)
+	_, err := config.DB.Exec(`UPDATE service SET nom=?, description=?, lieu=?, date_service=?, heure_debut=?, heure_fin=?, capacite_max=?, statut=? WHERE id_service=?`, s.Nom, s.Description, s.Lieu, s.DateService, s.HeureDebut, s.HeureFin, s.CapaciteMax, s.Statut, s.IDService)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -201,15 +177,7 @@ func GetInscriptions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rows, err := config.DB.Query(`
-		SELECT i.id_service, i.id_utilisateur, i.date_inscription, i.statut,
-			   u.nom, u.prenom
-		FROM inscription_service i
-		JOIN utilisateur u ON u.id_utilisateur = i.id_utilisateur
-		WHERE i.id_service = ?
-		  AND u.role = 'COMMERCANT'
-		ORDER BY i.date_inscription
-	`, idService)
+	rows, err := config.DB.Query(`SELECT i.id_service, i.id_utilisateur, i.date_inscription, i.statut, u.nom, u.prenom FROM inscription_service i JOIN utilisateur u ON u.id_utilisateur = i.id_utilisateur WHERE i.id_service = ? AND u.role = 'COMMERCANT' ORDER BY i.date_inscription`, idService)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -261,7 +229,6 @@ func CreateInscription(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Vérifie s’il reste des places
 	var capaciteMax *int
 	var nbInscrits int
 	err = config.DB.QueryRow(`SELECT capacite_max FROM service WHERE id_service = ? AND statut = 'OUVERT'`, i.IDService).Scan(&capaciteMax)
@@ -269,14 +236,7 @@ func CreateInscription(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "service introuvable", http.StatusNotFound)
 		return
 	}
-	config.DB.QueryRow(`
-		SELECT COUNT(*)
-		FROM inscription_service ins
-		JOIN utilisateur u ON u.id_utilisateur = ins.id_utilisateur
-		WHERE ins.id_service = ?
-		  AND ins.statut != 'ANNULE'
-		  AND u.role = 'COMMERCANT'
-	`, i.IDService).Scan(&nbInscrits)
+	config.DB.QueryRow(`SELECT COUNT(*) FROM inscription_service ins JOIN utilisateur u ON u.id_utilisateur = ins.id_utilisateur WHERE ins.id_service = ? AND ins.statut != 'ANNULE' AND u.role = 'COMMERCANT'`, i.IDService).Scan(&nbInscrits)
 	if capaciteMax != nil && nbInscrits >= *capaciteMax {
 		http.Error(w, "ce service est complet", http.StatusConflict)
 		return
@@ -285,10 +245,7 @@ func CreateInscription(w http.ResponseWriter, r *http.Request) {
 		i.Statut = "INSCRIT"
 	}
 
-	_, err = config.DB.Exec(`
-		INSERT INTO inscription_service (id_service, id_utilisateur, statut)
-		VALUES (?,?,?)
-	`, i.IDService, i.IDUtilisateur, i.Statut)
+	_, err = config.DB.Exec(`INSERT INTO inscription_service (id_service, id_utilisateur, statut) VALUES (?,?,?)`, i.IDService, i.IDUtilisateur, i.Statut)
 
 	if err != nil {
 		http.Error(w, "cette personne est déjà inscrite à ce service", http.StatusConflict)
@@ -313,10 +270,7 @@ func UpdateInscription(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err := config.DB.Exec(`
-		UPDATE inscription_service SET statut = ?
-		WHERE id_service = ? AND id_utilisateur = ?
-	`, i.Statut, i.IDService, i.IDUtilisateur)
+	_, err := config.DB.Exec(`UPDATE inscription_service SET statut = ? WHERE id_service = ? AND id_utilisateur = ?`, i.Statut, i.IDService, i.IDUtilisateur)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -341,10 +295,7 @@ func DeleteInscription(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err := config.DB.Exec(`
-		DELETE FROM inscription_service
-		WHERE id_service = ? AND id_utilisateur = ?
-	`, i.IDService, i.IDUtilisateur)
+	_, err := config.DB.Exec(`DELETE FROM inscription_service WHERE id_service = ? AND id_utilisateur = ?`, i.IDService, i.IDUtilisateur)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -353,8 +304,6 @@ func DeleteInscription(w http.ResponseWriter, r *http.Request) {
 
 	json.NewEncoder(w).Encode(map[string]string{"message": "Inscription supprimée"})
 }
-
-// Le commerçant connecté peut s’inscrire lui-même
 
 func InscrireAdherentService(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
@@ -394,24 +343,13 @@ func InscrireAdherentService(w http.ResponseWriter, r *http.Request) {
 
 	var capaciteMax *int
 	var nbInscrits int
-	err = config.DB.QueryRow(`
-		SELECT capacite_max
-		FROM service
-		WHERE id_service = ? AND statut = 'OUVERT'
-	`, demande.IDService).Scan(&capaciteMax)
+	err = config.DB.QueryRow(`SELECT capacite_max FROM service WHERE id_service = ? AND statut = 'OUVERT'`, demande.IDService).Scan(&capaciteMax)
 	if err != nil {
 		http.Error(w, "service introuvable ou fermé", http.StatusNotFound)
 		return
 	}
 
-	err = config.DB.QueryRow(`
-		SELECT COUNT(*)
-		FROM inscription_service ins
-		JOIN utilisateur u ON u.id_utilisateur = ins.id_utilisateur
-		WHERE ins.id_service = ?
-		  AND ins.statut != 'ANNULE'
-		  AND u.role = 'COMMERCANT'
-	`, demande.IDService).Scan(&nbInscrits)
+	err = config.DB.QueryRow(`SELECT COUNT(*) FROM inscription_service ins JOIN utilisateur u ON u.id_utilisateur = ins.id_utilisateur WHERE ins.id_service = ? AND ins.statut != 'ANNULE' AND u.role = 'COMMERCANT'`, demande.IDService).Scan(&nbInscrits)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -422,10 +360,7 @@ func InscrireAdherentService(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = config.DB.Exec(`
-		INSERT INTO inscription_service (id_service, id_utilisateur, statut)
-		VALUES (?, ?, 'INSCRIT')
-	`, demande.IDService, informations.IDUtilisateur)
+	_, err = config.DB.Exec(`INSERT INTO inscription_service (id_service, id_utilisateur, statut) VALUES (?, ?, 'INSCRIT')`, demande.IDService, informations.IDUtilisateur)
 	if err != nil {
 		http.Error(w, "vous êtes déjà inscrit à ce service", http.StatusConflict)
 		return

@@ -1,4 +1,3 @@
-// API PRODUITS — Catalogue des produits — Informations générales des produits
 package handlers
 
 import (
@@ -13,18 +12,7 @@ func GetProduits(w http.ResponseWriter, r *http.Request) {
 
 	var produits []models.Produit
 
-	rows, err := config.DB.Query(`
-		SELECT
-			id_produit,
-			nom,
-			description,
-			code_barre,
-			id_categorie,
-			unite,
-			poids,
-			actif
-		FROM produit
-	`)
+	rows, err := config.DB.Query(`SELECT id_produit, nom, description, code_barre, id_categorie, unite, poids, actif FROM produit`)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -75,18 +63,7 @@ func CreateProduit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := config.DB.Exec(`
-		INSERT INTO produit
-		(
-			nom,
-			description,
-			code_barre,
-			id_categorie,
-			unite,
-			poids
-		)
-		VALUES (?, ?, ?, ?, ?, ?)
-	`,
+	result, err := config.DB.Exec(`INSERT INTO produit ( nom, description, code_barre, id_categorie, unite, poids ) VALUES (?, ?, ?, ?, ?, ?)`,
 		p.Nom,
 		p.Description,
 		p.CodeBarre,
@@ -118,18 +95,7 @@ func UpdateProduit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = config.DB.Exec(`
-		UPDATE produit
-		SET
-			nom = ?,
-			description = ?,
-			code_barre = ?,
-			id_categorie = ?,
-			unite = ?,
-			poids = ?,
-			actif = ?
-		WHERE id_produit = ?
-	`,
+	_, err = config.DB.Exec(`UPDATE produit SET nom = ?, description = ?, code_barre = ?, id_categorie = ?, unite = ?, poids = ?, actif = ? WHERE id_produit = ?`,
 		p.Nom,
 		p.Description,
 		p.CodeBarre,
@@ -160,10 +126,7 @@ func DeleteProduit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = config.DB.Exec(`
-		DELETE FROM produit
-		WHERE id_produit = ?
-	`, produit.ID)
+	_, err = config.DB.Exec(`DELETE FROM produit WHERE id_produit = ?`, produit.ID)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

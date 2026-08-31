@@ -1,4 +1,3 @@
-// API OFFRES BENEVOLES — Publication des missions + réponses des bénévoles
 package handlers
 
 import (
@@ -84,15 +83,7 @@ func CreateOffreBenevole(w http.ResponseWriter, r *http.Request) {
 	var statutEvenement string
 
 	if data.TypeEvenement == "COLLECTE" {
-		err := config.DB.QueryRow(`
-			SELECT
-				DATE_FORMAT(date_collecte, '%Y-%m-%d'),
-				TIME_FORMAT(heure_debut, '%H:%i'),
-				TIME_FORMAT(heure_fin, '%H:%i'),
-				statut
-			FROM collecte
-			WHERE id_collecte = ?
-		`, data.IDEvenement).Scan(
+		err := config.DB.QueryRow(`SELECT DATE_FORMAT(date_collecte, '%Y-%m-%d'), TIME_FORMAT(heure_debut, '%H:%i'), TIME_FORMAT(heure_fin, '%H:%i'), statut FROM collecte WHERE id_collecte = ?`, data.IDEvenement).Scan(
 			&dateEvenement,
 			&heureDebut,
 			&heureFin,
@@ -116,15 +107,7 @@ func CreateOffreBenevole(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if data.TypeEvenement == "SERVICE" {
-		err := config.DB.QueryRow(`
-			SELECT
-				DATE_FORMAT(date_service, '%Y-%m-%d'),
-				TIME_FORMAT(heure_debut, '%H:%i'),
-				TIME_FORMAT(heure_fin, '%H:%i'),
-				statut
-			FROM service
-			WHERE id_service = ?
-		`, data.IDEvenement).Scan(
+		err := config.DB.QueryRow(`SELECT DATE_FORMAT(date_service, '%Y-%m-%d'), TIME_FORMAT(heure_debut, '%H:%i'), TIME_FORMAT(heure_fin, '%H:%i'), statut FROM service WHERE id_service = ?`, data.IDEvenement).Scan(
 			&dateEvenement,
 			&heureDebut,
 			&heureFin,
@@ -175,13 +158,7 @@ func CreateOffreBenevole(w http.ResponseWriter, r *http.Request) {
 
 	var existe int
 
-	err := config.DB.QueryRow(`
-		SELECT COUNT(*)
-		FROM offre_benevole
-		WHERE type_evenement = ?
-		AND id_evenement = ?
-		AND statut = 'OUVERTE'
-	`,
+	err := config.DB.QueryRow(`SELECT COUNT(*) FROM offre_benevole WHERE type_evenement = ? AND id_evenement = ? AND statut = 'OUVERTE'`,
 		data.TypeEvenement,
 		data.IDEvenement,
 	).Scan(&existe)
@@ -207,20 +184,7 @@ func CreateOffreBenevole(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resultat, err := tx.Exec(`
-		INSERT INTO offre_benevole
-		(
-			type_evenement,
-			id_evenement,
-			titre,
-			description,
-			nombre_benevoles_requis,
-			heure_debut,
-			heure_fin,
-			statut
-		)
-		VALUES (?, ?, ?, ?, ?, ?, ?, 'OUVERTE')
-	`,
+	resultat, err := tx.Exec(`INSERT INTO offre_benevole ( type_evenement, id_evenement, titre, description, nombre_benevoles_requis, heure_debut, heure_fin, statut ) VALUES (?, ?, ?, ?, ?, ?, ?, 'OUVERTE')`,
 		data.TypeEvenement,
 		data.IDEvenement,
 		data.Titre,
@@ -244,14 +208,7 @@ func CreateOffreBenevole(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = tx.Exec(`
-		INSERT INTO offre_benevole_jour
-		(
-			id_offre,
-			date_jour
-		)
-		VALUES (?, ?)
-	`,
+	_, err = tx.Exec(`INSERT INTO offre_benevole_jour ( id_offre, date_jour ) VALUES (?, ?)`,
 		idOffre,
 		dateEvenement,
 	)
@@ -278,33 +235,7 @@ func CreateOffreBenevole(w http.ResponseWriter, r *http.Request) {
 func GetOffresBenevoles(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	rows, err := config.DB.Query(`
-		SELECT
-			ob.id_offre,
-			ob.type_evenement,
-			ob.id_evenement,
-			ob.titre,
-			COALESCE(ob.description, ''),
-			TIME_FORMAT(ob.heure_debut, '%H:%i'),
-			TIME_FORMAT(ob.heure_fin, '%H:%i'),
-			ob.statut,
-			ob.nombre_benevoles_requis,
-			CASE
-				WHEN ob.type_evenement = 'COLLECTE' THEN (
-					SELECT COUNT(*)
-					FROM collecte_benevole cb
-					WHERE cb.id_collecte = ob.id_evenement
-				)
-				WHEN ob.type_evenement = 'SERVICE' THEN (
-					SELECT COUNT(*)
-					FROM service_benevole sb
-					WHERE sb.id_service = ob.id_evenement
-				)
-				ELSE 0
-			END AS nombre_affectes
-		FROM offre_benevole ob
-		ORDER BY ob.date_creation DESC
-	`)
+	rows, err := config.DB.Query(`SELECT ob.id_offre, ob.type_evenement, ob.id_evenement, ob.titre, COALESCE(ob.description, ''), TIME_FORMAT(ob.heure_debut, '%H:%i'), TIME_FORMAT(ob.heure_fin, '%H:%i'), ob.statut, ob.nombre_benevoles_requis, CASE WHEN ob.type_evenement = 'COLLECTE' THEN ( SELECT COUNT(*) FROM collecte_benevole cb WHERE cb.id_collecte = ob.id_evenement ) WHEN ob.type_evenement = 'SERVICE' THEN ( SELECT COUNT(*) FROM service_benevole sb WHERE sb.id_service = ob.id_evenement ) ELSE 0 END AS nombre_affectes FROM offre_benevole ob ORDER BY ob.date_creation DESC`)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -332,12 +263,7 @@ func GetOffresBenevoles(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		rowsJours, err := config.DB.Query(`
-			SELECT id_jour, DATE_FORMAT(date_jour, '%Y-%m-%d')
-			FROM offre_benevole_jour
-			WHERE id_offre = ?
-			ORDER BY date_jour
-		`, offre.IDOffre)
+		rowsJours, err := config.DB.Query(`SELECT id_jour, DATE_FORMAT(date_jour, '%Y-%m-%d') FROM offre_benevole_jour WHERE id_offre = ? ORDER BY date_jour`, offre.IDOffre)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -395,11 +321,7 @@ func RepondreOffreBenevole(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = tx.Exec(`
-		DELETE FROM offre_benevole_reponse
-		WHERE id_offre = ?
-		AND id_utilisateur = ?
-	`,
+	_, err = tx.Exec(`DELETE FROM offre_benevole_reponse WHERE id_offre = ? AND id_utilisateur = ?`,
 		data.IDOffre,
 		informations.IDUtilisateur,
 	)
@@ -410,11 +332,7 @@ func RepondreOffreBenevole(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for _, idJour := range data.IDJours {
-		_, err = tx.Exec(`
-			INSERT INTO offre_benevole_reponse
-			(id_offre, id_jour, id_utilisateur)
-			VALUES (?, ?, ?)
-		`,
+		_, err = tx.Exec(`INSERT INTO offre_benevole_reponse (id_offre, id_jour, id_utilisateur) VALUES (?, ?, ?)`,
 			data.IDOffre,
 			idJour,
 			informations.IDUtilisateur,
@@ -447,22 +365,7 @@ func GetReponsesOffreBenevole(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rows, err := config.DB.Query(`
-		SELECT
-			obr.id_jour,
-			DATE_FORMAT(obj.date_jour, '%Y-%m-%d'),
-			u.id_utilisateur,
-			u.nom,
-			u.prenom,
-			u.email
-		FROM offre_benevole_reponse obr
-		INNER JOIN offre_benevole_jour obj
-			ON obj.id_jour = obr.id_jour
-		INNER JOIN utilisateur u
-			ON u.id_utilisateur = obr.id_utilisateur
-		WHERE obr.id_offre = ?
-		ORDER BY obj.date_jour, u.nom, u.prenom
-	`, idOffre)
+	rows, err := config.DB.Query(`SELECT obr.id_jour, DATE_FORMAT(obj.date_jour, '%Y-%m-%d'), u.id_utilisateur, u.nom, u.prenom, u.email FROM offre_benevole_reponse obr INNER JOIN offre_benevole_jour obj ON obj.id_jour = obr.id_jour INNER JOIN utilisateur u ON u.id_utilisateur = obr.id_utilisateur WHERE obr.id_offre = ? ORDER BY obj.date_jour, u.nom, u.prenom`, idOffre)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -510,14 +413,7 @@ func GetMesReponsesOffresBenevole(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rows, err := config.DB.Query(`
-		SELECT
-			id_offre,
-			id_jour
-		FROM offre_benevole_reponse
-		WHERE id_utilisateur = ?
-		ORDER BY id_offre, id_jour
-	`, informations.IDUtilisateur)
+	rows, err := config.DB.Query(`SELECT id_offre, id_jour FROM offre_benevole_reponse WHERE id_utilisateur = ? ORDER BY id_offre, id_jour`, informations.IDUtilisateur)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

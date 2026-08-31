@@ -1,4 +1,3 @@
-// API MOUVEMENTS STOCK — Historique des entrées, sorties et corrections de stock
 package handlers
 
 import (
@@ -14,24 +13,7 @@ func GetStocks(w http.ResponseWriter, r *http.Request) {
 
 	var stocks []models.Stock
 
-	rows, err := config.DB.Query(`
-		SELECT
-			s.id_stock,
-			s.id_produit,
-			p.nom,
-			p.code_barre,
-			c.nom,
-			s.quantite,
-			s.emplacement,
-			s.date_entree,
-			s.derniere_maj
-		FROM stock s
-		INNER JOIN produit p
-			ON p.id_produit = s.id_produit
-		INNER JOIN categorie_produit c
-			ON c.id_categorie = p.id_categorie
-		ORDER BY p.nom ASC
-	`)
+	rows, err := config.DB.Query(`SELECT s.id_stock, s.id_produit, p.nom, p.code_barre, c.nom, s.quantite, s.emplacement, s.date_entree, s.derniere_maj FROM stock s INNER JOIN produit p ON p.id_produit = s.id_produit INNER JOIN categorie_produit c ON c.id_categorie = p.id_categorie ORDER BY p.nom ASC`)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -85,15 +67,7 @@ func CreateStock(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = config.DB.Exec(`
-		INSERT INTO stock
-		(
-			id_produit,
-			quantite,
-			emplacement
-		)
-		VALUES (?, ?, ?)
-	`,
+	_, err = config.DB.Exec(`INSERT INTO stock ( id_produit, quantite, emplacement ) VALUES (?, ?, ?)`,
 		s.IDProduit,
 		s.Quantite,
 		s.Emplacement,
@@ -124,15 +98,7 @@ func UpdateStock(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = config.DB.Exec(`
-		UPDATE stock
-		SET
-			id_produit = ?,
-			quantite = ?,
-			emplacement = ?
-		WHERE
-			id_stock = ?
-	`,
+	_, err = config.DB.Exec(`UPDATE stock SET id_produit = ?, quantite = ?, emplacement = ? WHERE id_stock = ?`,
 		s.IDProduit,
 		s.Quantite,
 		s.Emplacement,
@@ -164,10 +130,7 @@ func DeleteStock(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = config.DB.Exec(`
-		DELETE FROM stock
-		WHERE id_stock = ?
-	`,
+	_, err = config.DB.Exec(`DELETE FROM stock WHERE id_stock = ?`,
 		s.IDStock,
 	)
 

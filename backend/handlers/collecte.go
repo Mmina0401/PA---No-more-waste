@@ -1,4 +1,3 @@
-// API COLLECTES — Logique métier des collectes — CRUD + changements de statut
 package handlers
 
 import (
@@ -66,35 +65,7 @@ func GetCollecte(w http.ResponseWriter, r *http.Request) {
 
 	var c CollecteVue
 
-	err := scannerCollecteVue(config.DB.QueryRow(`
-		SELECT
-			c.id_collecte,
-			c.id_utilisateur,
-			c.id_vehicule,
-			DATE_FORMAT(c.date_collecte, '%Y-%m-%d'),
-			TIME_FORMAT(c.heure_debut, '%H:%i'),
-			TIME_FORMAT(c.heure_fin, '%H:%i'),
-			c.adresse,
-			c.ville,
-			c.code_postal,
-			c.commentaire,
-			c.statut,
-			u.nom,
-			u.prenom,
-			u.email,
-			u.telephone,
-			u.role,
-			u.raison_sociale,
-			v.immatriculation,
-			v.marque,
-			v.modele
-		FROM collecte c
-		JOIN utilisateur u
-			ON u.id_utilisateur = c.id_utilisateur
-		LEFT JOIN vehicule v
-			ON v.id_vehicule = c.id_vehicule
-		WHERE c.id_collecte = ?
-	`, id), &c)
+	err := scannerCollecteVue(config.DB.QueryRow(`SELECT c.id_collecte, c.id_utilisateur, c.id_vehicule, DATE_FORMAT(c.date_collecte, '%Y-%m-%d'), TIME_FORMAT(c.heure_debut, '%H:%i'), TIME_FORMAT(c.heure_fin, '%H:%i'), c.adresse, c.ville, c.code_postal, c.commentaire, c.statut, u.nom, u.prenom, u.email, u.telephone, u.role, u.raison_sociale, v.immatriculation, v.marque, v.modele FROM collecte c JOIN utilisateur u ON u.id_utilisateur = c.id_utilisateur LEFT JOIN vehicule v ON v.id_vehicule = c.id_vehicule WHERE c.id_collecte = ?`, id), &c)
 
 	if err != nil {
 		http.Error(w, "collecte introuvable", http.StatusNotFound)
@@ -115,21 +86,7 @@ func CreateCollecte(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := config.DB.Exec(`
-        INSERT INTO collecte (
-            id_utilisateur,
-            id_vehicule,
-            date_collecte,
-            heure_debut,
-            heure_fin,
-            adresse,
-            ville,
-            code_postal,
-            commentaire,
-            statut
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `,
+	result, err := config.DB.Exec(`INSERT INTO collecte ( id_utilisateur, id_vehicule, date_collecte, heure_debut, heure_fin, adresse, ville, code_postal, commentaire, statut ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		c.IDUtilisateur,
 		c.IDVehicule,
 		c.DateCollecte,
@@ -195,11 +152,7 @@ func UpdateCollecte(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var statutActuel string
-	err := config.DB.QueryRow(`
-		SELECT statut
-		FROM collecte
-		WHERE id_collecte = ?
-	`, c.IDCollecte).Scan(&statutActuel)
+	err := config.DB.QueryRow(`SELECT statut FROM collecte WHERE id_collecte = ?`, c.IDCollecte).Scan(&statutActuel)
 
 	if err != nil {
 		http.Error(w, "collecte introuvable", http.StatusNotFound)
@@ -233,20 +186,7 @@ func UpdateCollecte(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = config.DB.Exec(`
-		UPDATE collecte
-		SET
-			id_vehicule=?,
-			date_collecte=?,
-			heure_debut=?,
-			heure_fin=?,
-			adresse=?,
-			ville=?,
-			code_postal=?,
-			commentaire=?,
-			statut=?
-		WHERE id_collecte=?
-	`,
+	_, err = config.DB.Exec(`UPDATE collecte SET id_vehicule=?, date_collecte=?, heure_debut=?, heure_fin=?, adresse=?, ville=?, code_postal=?, commentaire=?, statut=? WHERE id_collecte=?`,
 		c.IDVehicule,
 		c.DateCollecte,
 		c.HeureDebut,
@@ -282,11 +222,7 @@ func DeleteCollecte(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var statut string
-	err := config.DB.QueryRow(`
-		SELECT statut
-		FROM collecte
-		WHERE id_collecte = ?
-	`, body.IDCollecte).Scan(&statut)
+	err := config.DB.QueryRow(`SELECT statut FROM collecte WHERE id_collecte = ?`, body.IDCollecte).Scan(&statut)
 
 	if err != nil {
 		http.Error(w, "collecte introuvable", http.StatusNotFound)
@@ -320,35 +256,7 @@ func DeleteCollecte(w http.ResponseWriter, r *http.Request) {
 func GetCollectes(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	rows, err := config.DB.Query(`
-		SELECT
-			c.id_collecte,
-			c.id_utilisateur,
-			c.id_vehicule,
-			DATE_FORMAT(c.date_collecte, '%Y-%m-%d'),
-			TIME_FORMAT(c.heure_debut, '%H:%i'),
-			TIME_FORMAT(c.heure_fin, '%H:%i'),
-			c.adresse,
-			c.ville,
-			c.code_postal,
-			c.commentaire,
-			c.statut,
-			u.nom,
-			u.prenom,
-			u.email,
-			u.telephone,
-			u.role,
-			u.raison_sociale,
-			v.immatriculation,
-			v.marque,
-			v.modele
-		FROM collecte c
-		JOIN utilisateur u
-			ON u.id_utilisateur = c.id_utilisateur
-		LEFT JOIN vehicule v
-			ON v.id_vehicule = c.id_vehicule
-		ORDER BY c.date_collecte DESC, c.id_collecte DESC
-	`)
+	rows, err := config.DB.Query(`SELECT c.id_collecte, c.id_utilisateur, c.id_vehicule, DATE_FORMAT(c.date_collecte, '%Y-%m-%d'), TIME_FORMAT(c.heure_debut, '%H:%i'), TIME_FORMAT(c.heure_fin, '%H:%i'), c.adresse, c.ville, c.code_postal, c.commentaire, c.statut, u.nom, u.prenom, u.email, u.telephone, u.role, u.raison_sociale, v.immatriculation, v.marque, v.modele FROM collecte c JOIN utilisateur u ON u.id_utilisateur = c.id_utilisateur LEFT JOIN vehicule v ON v.id_vehicule = c.id_vehicule ORDER BY c.date_collecte DESC, c.id_collecte DESC`)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

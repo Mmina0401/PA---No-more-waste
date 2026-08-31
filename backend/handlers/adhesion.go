@@ -1,4 +1,3 @@
-// API ADHESIONS — Gestion des adhésions commerçants — Création + statut + expiration
 package handlers
 
 import (
@@ -32,12 +31,7 @@ type AdhesionARelancer struct {
 func GetAdhesions(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	requete := `
-		SELECT
-			id_adhesion, id_utilisateur, date_debut, date_fin, montant,
-			date_paiement, mode_paiement, statut, rappel_envoye
-		FROM adhesion
-	`
+	requete := `SELECT id_adhesion, id_utilisateur, date_debut, date_fin, montant, date_paiement, mode_paiement, statut, rappel_envoye FROM adhesion`
 
 	arguments := []interface{}{}
 
@@ -85,13 +79,7 @@ func CreateAdhesion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := config.DB.Exec(`
-		INSERT INTO adhesion(
-			id_utilisateur, date_debut, date_fin, montant,
-			date_paiement, mode_paiement, statut, rappel_envoye
-		)
-		VALUES(?,?,?,?,?,?,?,?)
-	`,
+	result, err := config.DB.Exec(`INSERT INTO adhesion( id_utilisateur, date_debut, date_fin, montant, date_paiement, mode_paiement, statut, rappel_envoye ) VALUES(?,?,?,?,?,?,?,?)`,
 		a.IDUtilisateur, a.DateDebut, a.DateFin, a.Montant,
 		a.DatePaiement, a.ModePaiement, a.Statut, a.RappelEnvoye,
 	)
@@ -116,12 +104,7 @@ func UpdateAdhesion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = config.DB.Exec(`
-		UPDATE adhesion
-		SET id_utilisateur=?, date_debut=?, date_fin=?, montant=?,
-			date_paiement=?, mode_paiement=?, statut=?, rappel_envoye=?
-		WHERE id_adhesion=?
-	`,
+	_, err = config.DB.Exec(`UPDATE adhesion SET id_utilisateur=?, date_debut=?, date_fin=?, montant=?, date_paiement=?, mode_paiement=?, statut=?, rappel_envoye=? WHERE id_adhesion=?`,
 		a.IDUtilisateur, a.DateDebut, a.DateFin, a.Montant,
 		a.DatePaiement, a.ModePaiement, a.Statut, a.RappelEnvoye,
 		a.ID,
@@ -146,10 +129,7 @@ func DeleteAdhesion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = config.DB.Exec(`
-		DELETE FROM adhesion
-		WHERE id_adhesion=?
-	`, a.ID)
+	_, err = config.DB.Exec(`DELETE FROM adhesion WHERE id_adhesion=?`, a.ID)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -161,25 +141,10 @@ func DeleteAdhesion(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// Récupère les adhésions qui expirent dans moins de 30 jours
 func ObtenirAdhesionsARelancer(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	lignes, err := config.DB.Query(`
-		SELECT
-			a.id_adhesion,
-			a.id_utilisateur,
-			COALESCE(u.raison_sociale, CONCAT(u.prenom, ' ', u.nom)) AS nom_commercant,
-			u.email,
-			a.date_fin,
-			DATEDIFF(a.date_fin, CURDATE()) AS jours_restants
-		FROM adhesion a
-		JOIN utilisateur u ON u.id_utilisateur = a.id_utilisateur
-		WHERE a.statut = 'ACTIVE'
-		  AND a.rappel_envoye = FALSE
-		  AND a.date_fin BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)
-		ORDER BY a.date_fin ASC
-	`)
+	lignes, err := config.DB.Query(`SELECT a.id_adhesion, a.id_utilisateur, COALESCE(u.raison_sociale, CONCAT(u.prenom, ' ', u.nom)) AS nom_commercant, u.email, a.date_fin, DATEDIFF(a.date_fin, CURDATE()) AS jours_restants FROM adhesion a JOIN utilisateur u ON u.id_utilisateur = a.id_utilisateur WHERE a.statut = 'ACTIVE' AND a.rappel_envoye = FALSE AND a.date_fin BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY) ORDER BY a.date_fin ASC`)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -210,7 +175,6 @@ func ObtenirAdhesionsARelancer(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(resultat)
 }
 
-// Indique que le rappel a déjà été envoyé
 func MarquerRappelEnvoye(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 

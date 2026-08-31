@@ -1,4 +1,3 @@
-// API COMMERCANTS — Gestion des comptes et informations commerçants
 package handlers
 
 import (
@@ -66,20 +65,10 @@ type AdherentActif struct {
 
 func commercantAdherentActif(idUtilisateur int) (bool, error) {
 	var existe int
-	err := config.DB.QueryRow(`
-		SELECT COUNT(*)
-		FROM utilisateur u
-		JOIN adhesion a ON a.id_utilisateur = u.id_utilisateur
-		WHERE u.id_utilisateur = ?
-		  AND u.role = 'COMMERCANT'
-		  AND u.actif = TRUE
-		  AND a.statut = 'ACTIVE'
-		  AND CURDATE() BETWEEN a.date_debut AND a.date_fin
-	`, idUtilisateur).Scan(&existe)
+	err := config.DB.QueryRow(`SELECT COUNT(*) FROM utilisateur u JOIN adhesion a ON a.id_utilisateur = u.id_utilisateur WHERE u.id_utilisateur = ? AND u.role = 'COMMERCANT' AND u.actif = TRUE AND a.statut = 'ACTIVE' AND CURDATE() BETWEEN a.date_debut AND a.date_fin`, idUtilisateur).Scan(&existe)
 	return existe > 0, err
 }
 
-// Récupère les infos du commerçant connecté
 func GetEspaceCommercant(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -90,13 +79,7 @@ func GetEspaceCommercant(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var espace CommercantEspace
-	err := config.DB.QueryRow(`
-		SELECT
-			id_utilisateur, nom, prenom, email, telephone, adresse, ville,
-			code_postal, raison_sociale, siret, secteur_activite
-		FROM utilisateur
-		WHERE id_utilisateur = ? AND role = 'COMMERCANT'
-	`, informations.IDUtilisateur).Scan(
+	err := config.DB.QueryRow(`SELECT id_utilisateur, nom, prenom, email, telephone, adresse, ville, code_postal, raison_sociale, siret, secteur_activite FROM utilisateur WHERE id_utilisateur = ? AND role = 'COMMERCANT'`, informations.IDUtilisateur).Scan(
 		&espace.IDUtilisateur, &espace.Nom, &espace.Prenom, &espace.Email,
 		&espace.Telephone, &espace.Adresse, &espace.Ville, &espace.CodePostal,
 		&espace.RaisonSociale, &espace.Siret, &espace.SecteurActivite,
@@ -107,20 +90,7 @@ func GetEspaceCommercant(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var adhesion AdhesionCommercant
-	err = config.DB.QueryRow(`
-		SELECT
-			id_adhesion,
-			DATE_FORMAT(date_debut, '%Y-%m-%d'),
-			DATE_FORMAT(date_fin, '%Y-%m-%d'),
-			montant,
-			statut
-		FROM adhesion
-		WHERE id_utilisateur = ?
-		  AND statut = 'ACTIVE'
-		  AND CURDATE() BETWEEN date_debut AND date_fin
-		ORDER BY date_fin DESC
-		LIMIT 1
-	`, informations.IDUtilisateur).Scan(
+	err = config.DB.QueryRow(`SELECT id_adhesion, DATE_FORMAT(date_debut, '%Y-%m-%d'), DATE_FORMAT(date_fin, '%Y-%m-%d'), montant, statut FROM adhesion WHERE id_utilisateur = ? AND statut = 'ACTIVE' AND CURDATE() BETWEEN date_debut AND date_fin ORDER BY date_fin DESC LIMIT 1`, informations.IDUtilisateur).Scan(
 		&adhesion.IDAdhesion, &adhesion.DateDebut, &adhesion.DateFin,
 		&adhesion.Montant, &adhesion.Statut,
 	)
@@ -132,19 +102,7 @@ func GetEspaceCommercant(w http.ResponseWriter, r *http.Request) {
 	}
 
 	espace.Collectes = []CollecteCommercant{}
-	rowsCollectes, err := config.DB.Query(`
-		SELECT
-			id_collecte,
-			DATE_FORMAT(date_collecte, '%Y-%m-%d'),
-			TIME_FORMAT(heure_debut, '%H:%i'),
-			TIME_FORMAT(heure_fin, '%H:%i'),
-			adresse,
-			ville,
-			statut
-		FROM collecte
-		WHERE id_utilisateur = ?
-		ORDER BY date_collecte DESC, heure_debut DESC
-	`, informations.IDUtilisateur)
+	rowsCollectes, err := config.DB.Query(`SELECT id_collecte, DATE_FORMAT(date_collecte, '%Y-%m-%d'), TIME_FORMAT(heure_debut, '%H:%i'), TIME_FORMAT(heure_fin, '%H:%i'), adresse, ville, statut FROM collecte WHERE id_utilisateur = ? ORDER BY date_collecte DESC, heure_debut DESC`, informations.IDUtilisateur)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -164,21 +122,7 @@ func GetEspaceCommercant(w http.ResponseWriter, r *http.Request) {
 	rowsCollectes.Close()
 
 	espace.Services = []ServiceCommercant{}
-	rowsServices, err := config.DB.Query(`
-		SELECT
-			s.id_service,
-			s.nom,
-			COALESCE(DATE_FORMAT(s.date_service, '%Y-%m-%d'), ''),
-			COALESCE(TIME_FORMAT(s.heure_debut, '%H:%i'), ''),
-			COALESCE(TIME_FORMAT(s.heure_fin, '%H:%i'), ''),
-			COALESCE(s.lieu, ''),
-			i.statut
-		FROM inscription_service i
-		JOIN service s ON s.id_service = i.id_service
-		WHERE i.id_utilisateur = ?
-		  AND i.statut != 'ANNULE'
-		ORDER BY s.date_service DESC, s.heure_debut DESC
-	`, informations.IDUtilisateur)
+	rowsServices, err := config.DB.Query(`SELECT s.id_service, s.nom, COALESCE(DATE_FORMAT(s.date_service, '%Y-%m-%d'), ''), COALESCE(TIME_FORMAT(s.heure_debut, '%H:%i'), ''), COALESCE(TIME_FORMAT(s.heure_fin, '%H:%i'), ''), COALESCE(s.lieu, ''), i.statut FROM inscription_service i JOIN service s ON s.id_service = i.id_service WHERE i.id_utilisateur = ? AND i.statut != 'ANNULE' ORDER BY s.date_service DESC, s.heure_debut DESC`, informations.IDUtilisateur)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -200,27 +144,10 @@ func GetEspaceCommercant(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(espace)
 }
 
-// Récupère les commerçants avec une adhésion active
 func GetAdherentsActifs(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	rows, err := config.DB.Query(`
-		SELECT
-			u.id_utilisateur,
-			u.nom,
-			u.prenom,
-			u.email,
-			u.raison_sociale,
-			DATE_FORMAT(MAX(a.date_fin), '%Y-%m-%d')
-		FROM utilisateur u
-		JOIN adhesion a ON a.id_utilisateur = u.id_utilisateur
-		WHERE u.role = 'COMMERCANT'
-		  AND u.actif = TRUE
-		  AND a.statut = 'ACTIVE'
-		  AND CURDATE() BETWEEN a.date_debut AND a.date_fin
-		GROUP BY u.id_utilisateur
-		ORDER BY COALESCE(u.raison_sociale, u.nom), u.prenom
-	`)
+	rows, err := config.DB.Query(`SELECT u.id_utilisateur, u.nom, u.prenom, u.email, u.raison_sociale, DATE_FORMAT(MAX(a.date_fin), '%Y-%m-%d') FROM utilisateur u JOIN adhesion a ON a.id_utilisateur = u.id_utilisateur WHERE u.role = 'COMMERCANT' AND u.actif = TRUE AND a.statut = 'ACTIVE' AND CURDATE() BETWEEN a.date_debut AND a.date_fin GROUP BY u.id_utilisateur ORDER BY COALESCE(u.raison_sociale, u.nom), u.prenom`)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -243,10 +170,6 @@ func GetAdherentsActifs(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(adherents)
 }
 
-// Met à jour le statut d'un compte commerçant.
-// EN_ATTENTE = demande jamais validée
-// ACTIF = compte validé et utilisable
-// DESACTIVE = ancien compte validé, volontairement désactivé
 func ChangerStatutCommercant(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -279,11 +202,7 @@ func ChangerStatutCommercant(w http.ResponseWriter, r *http.Request) {
 
 	actif := demande.StatutCompte == "ACTIF"
 
-	resultat, err := config.DB.Exec(`
-		UPDATE utilisateur
-		SET actif = ?, statut_compte = ?
-		WHERE id_utilisateur = ? AND role = 'COMMERCANT'
-	`, actif, demande.StatutCompte, demande.IDUtilisateur)
+	resultat, err := config.DB.Exec(`UPDATE utilisateur SET actif = ?, statut_compte = ? WHERE id_utilisateur = ? AND role = 'COMMERCANT'`, actif, demande.StatutCompte, demande.IDUtilisateur)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

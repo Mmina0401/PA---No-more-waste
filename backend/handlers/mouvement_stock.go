@@ -1,4 +1,3 @@
-// API STOCK — Quantités actuellement disponibles dans le stock
 package handlers
 
 import (
@@ -13,17 +12,7 @@ func GetMouvementsStock(w http.ResponseWriter, r *http.Request) {
 
 	var mouvements []models.MouvementStock
 
-	rows, err := config.DB.Query(`
-		SELECT
-			id_mouvement,
-			id_stock,
-			id_utilisateur,
-			type,
-			quantite,
-			motif,
-			date_mouvement
-		FROM mouvement_stock
-	`)
+	rows, err := config.DB.Query(`SELECT id_mouvement, id_stock, id_utilisateur, type, quantite, motif, date_mouvement FROM mouvement_stock`)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -68,17 +57,7 @@ func CreateMouvementStock(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = config.DB.Exec(`
-		INSERT INTO mouvement_stock
-		(
-			id_stock,
-			id_utilisateur,
-			type,
-			quantite,
-			motif
-		)
-		VALUES (?, ?, ?, ?, ?)
-	`,
+	_, err = config.DB.Exec(`INSERT INTO mouvement_stock ( id_stock, id_utilisateur, type, quantite, motif ) VALUES (?, ?, ?, ?, ?)`,
 		m.IDStock,
 		m.IDUtilisateur,
 		m.Type,
@@ -111,17 +90,7 @@ func UpdateMouvementStock(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = config.DB.Exec(`
-		UPDATE mouvement_stock
-		SET
-			id_stock = ?,
-			id_utilisateur = ?,
-			type = ?,
-			quantite = ?,
-			motif = ?
-		WHERE
-			id_mouvement = ?
-	`,
+	_, err = config.DB.Exec(`UPDATE mouvement_stock SET id_stock = ?, id_utilisateur = ?, type = ?, quantite = ?, motif = ? WHERE id_mouvement = ?`,
 		m.IDStock,
 		m.IDUtilisateur,
 		m.Type,
@@ -155,10 +124,7 @@ func DeleteMouvementStock(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = config.DB.Exec(`
-		DELETE FROM mouvement_stock
-		WHERE id_mouvement = ?
-	`,
+	_, err = config.DB.Exec(`DELETE FROM mouvement_stock WHERE id_mouvement = ?`,
 		m.IDMouvement,
 	)
 

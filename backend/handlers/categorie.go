@@ -1,4 +1,3 @@
-// API CATEGORIES — Catégories de produits — Lecture + gestion
 package handlers
 
 import (
@@ -13,13 +12,7 @@ func GetCategories(w http.ResponseWriter, r *http.Request) {
 
 	var categories []models.Categorie
 
-	rows, err := config.DB.Query(`
-		SELECT
-			id_categorie,
-			nom,
-			description
-		FROM categorie_produit
-	`)
+	rows, err := config.DB.Query(`SELECT id_categorie, nom, description FROM categorie_produit`)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -60,11 +53,7 @@ func CreateCategorie(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := config.DB.Exec(`
-		INSERT INTO categorie_produit
-		(nom, description)
-		VALUES (?, ?)
-	`,
+	result, err := config.DB.Exec(`INSERT INTO categorie_produit (nom, description) VALUES (?, ?)`,
 		c.Nom,
 		c.Description,
 	)
@@ -91,13 +80,7 @@ func UpdateCategorie(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = config.DB.Exec(`
-		UPDATE categorie_produit
-		SET
-			nom=?,
-			description=?
-		WHERE id_categorie=?
-	`,
+	_, err = config.DB.Exec(`UPDATE categorie_produit SET nom=?, description=? WHERE id_categorie=?`,
 		c.Nom,
 		c.Description,
 		c.ID,

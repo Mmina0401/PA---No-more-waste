@@ -1,4 +1,3 @@
-// API UTILISATEURS — Gestion générale des comptes utilisateurs
 package handlers
 
 import (
@@ -33,14 +32,7 @@ type Utilisateur struct {
 func GetUtilisateurs(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	query := `
-		SELECT
-			id_utilisateur, nom, prenom, email, mot_de_passe,
-			telephone, adresse, ville, code_postal,
-			role, actif, statut_compte, date_creation,
-			raison_sociale, siret, secteur_activite
-		FROM utilisateur
-	`
+	query := `SELECT id_utilisateur, nom, prenom, email, mot_de_passe, telephone, adresse, ville, code_postal, role, actif, statut_compte, date_creation, raison_sociale, siret, secteur_activite FROM utilisateur`
 	args := []interface{}{}
 
 	if role := r.URL.Query().Get("role"); role != "" {
@@ -88,15 +80,7 @@ func GetUtilisateur(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var u Utilisateur
-	err := config.DB.QueryRow(`
-		SELECT
-			id_utilisateur, nom, prenom, email, mot_de_passe,
-			telephone, adresse, ville, code_postal,
-			role, actif, statut_compte, date_creation,
-			raison_sociale, siret, secteur_activite
-		FROM utilisateur
-		WHERE id_utilisateur = ?
-	`, id).Scan(
+	err := config.DB.QueryRow(`SELECT id_utilisateur, nom, prenom, email, mot_de_passe, telephone, adresse, ville, code_postal, role, actif, statut_compte, date_creation, raison_sociale, siret, secteur_activite FROM utilisateur WHERE id_utilisateur = ?`, id).Scan(
 		&u.ID, &u.Nom, &u.Prenom, &u.Email, &u.MotDePasse,
 		&u.Telephone, &u.Adresse, &u.Ville, &u.CodePostal,
 		&u.Role, &u.Actif, &u.StatutCompte, &u.DateCreation,
@@ -135,7 +119,6 @@ func CreateUtilisateur(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Chiffre le mot de passe avant de le stocker
 	hash, err := bcrypt.GenerateFromPassword([]byte(u.MotDePasse), bcrypt.DefaultCost)
 	if err != nil {
 		http.Error(w, "erreur lors du chiffrement du mot de passe", http.StatusInternalServerError)
@@ -145,13 +128,7 @@ func CreateUtilisateur(w http.ResponseWriter, r *http.Request) {
 	u.Actif = true
 	u.StatutCompte = "ACTIF"
 
-	result, err := config.DB.Exec(`
-		INSERT INTO utilisateur(
-			nom, prenom, email, mot_de_passe, telephone, adresse, ville, code_postal,
-			role, actif, statut_compte, raison_sociale, siret, secteur_activite
-		)
-		VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-	`,
+	result, err := config.DB.Exec(`INSERT INTO utilisateur( nom, prenom, email, mot_de_passe, telephone, adresse, ville, code_postal, role, actif, statut_compte, raison_sociale, siret, secteur_activite ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
 		u.Nom, u.Prenom, u.Email, string(hash), u.Telephone, u.Adresse, u.Ville, u.CodePostal,
 		u.Role, u.Actif, u.StatutCompte, u.RaisonSociale, u.Siret, u.SecteurActivite,
 	)
@@ -187,12 +164,7 @@ func UpdateUtilisateur(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err := config.DB.Exec(`
-		UPDATE utilisateur
-		SET nom=?, prenom=?, email=?, telephone=?, adresse=?, ville=?, code_postal=?,
-			role=?, actif=?, raison_sociale=?, siret=?, secteur_activite=?
-		WHERE id_utilisateur=?
-	`,
+	_, err := config.DB.Exec(`UPDATE utilisateur SET nom=?, prenom=?, email=?, telephone=?, adresse=?, ville=?, code_postal=?, role=?, actif=?, raison_sociale=?, siret=?, secteur_activite=? WHERE id_utilisateur=?`,
 		u.Nom, u.Prenom, u.Email, u.Telephone, u.Adresse, u.Ville, u.CodePostal,
 		u.Role, u.Actif, u.RaisonSociale, u.Siret, u.SecteurActivite,
 		u.ID,

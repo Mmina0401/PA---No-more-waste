@@ -1,4 +1,3 @@
-// API AFFECTATION BENEVOLE/SERVICE — Affectation réelle des bénévoles aux services
 package handlers
 
 import (
@@ -22,17 +21,7 @@ func GetServiceBenevoles(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	idService := r.URL.Query().Get("id_service")
-	requete := `
-		SELECT
-			sb.id_service,
-			sb.id_utilisateur,
-			sb.role_service,
-			u.nom,
-			u.prenom,
-			u.email
-		FROM service_benevole sb
-		JOIN utilisateur u ON u.id_utilisateur = sb.id_utilisateur
-	`
+	requete := `SELECT sb.id_service, sb.id_utilisateur, sb.role_service, u.nom, u.prenom, u.email FROM service_benevole sb JOIN utilisateur u ON u.id_utilisateur = sb.id_utilisateur`
 	args := []interface{}{}
 
 	if idService != "" {
@@ -94,11 +83,7 @@ func CreateServiceBenevole(w http.ResponseWriter, r *http.Request) {
 	var role string
 	var actif bool
 
-	err := config.DB.QueryRow(`
-		SELECT role, actif
-		FROM utilisateur
-		WHERE id_utilisateur = ?
-	`, a.IDUtilisateur).Scan(&role, &actif)
+	err := config.DB.QueryRow(`SELECT role, actif FROM utilisateur WHERE id_utilisateur = ?`, a.IDUtilisateur).Scan(&role, &actif)
 
 	if err != nil || role != "BENEVOLE" || !actif {
 		http.Error(w, "bénévole invalide ou non validé", http.StatusBadRequest)
@@ -106,12 +91,7 @@ func CreateServiceBenevole(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var serviceExiste int
-	err = config.DB.QueryRow(`
-		SELECT COUNT(*)
-		FROM service
-		WHERE id_service = ?
-		AND statut != 'ANNULE'
-	`, a.IDService).Scan(&serviceExiste)
+	err = config.DB.QueryRow(`SELECT COUNT(*) FROM service WHERE id_service = ? AND statut != 'ANNULE'`, a.IDService).Scan(&serviceExiste)
 
 	if err != nil || serviceExiste == 0 {
 		http.Error(w, "service introuvable ou annulé", http.StatusNotFound)
@@ -125,19 +105,9 @@ func CreateServiceBenevole(w http.ResponseWriter, r *http.Request) {
 	}
 	defer tx.Rollback()
 
-	// Vérifie le nombre de places bénévoles
 	var nombreBenevolesRequis int
 
-	err = tx.QueryRow(`
-		SELECT nombre_benevoles_requis
-		FROM offre_benevole
-		WHERE type_evenement = 'SERVICE'
-		AND id_evenement = ?
-		AND statut = 'OUVERTE'
-		ORDER BY id_offre DESC
-		LIMIT 1
-		FOR UPDATE
-	`, a.IDService).Scan(&nombreBenevolesRequis)
+	err = tx.QueryRow(`SELECT nombre_benevoles_requis FROM offre_benevole WHERE type_evenement = 'SERVICE' AND id_evenement = ? AND statut = 'OUVERTE' ORDER BY id_offre DESC LIMIT 1 FOR UPDATE`, a.IDService).Scan(&nombreBenevolesRequis)
 
 	if err != nil && err != sql.ErrNoRows {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -147,11 +117,7 @@ func CreateServiceBenevole(w http.ResponseWriter, r *http.Request) {
 	if err == nil {
 		var nombreAffectes int
 
-		if err := tx.QueryRow(`
-			SELECT COUNT(*)
-			FROM service_benevole
-			WHERE id_service = ?
-		`, a.IDService).Scan(&nombreAffectes); err != nil {
+		if err := tx.QueryRow(`SELECT COUNT(*) FROM service_benevole WHERE id_service = ?`, a.IDService).Scan(&nombreAffectes); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -166,11 +132,7 @@ func CreateServiceBenevole(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	_, err = tx.Exec(`
-		INSERT INTO service_benevole
-			(id_service, id_utilisateur, role_service)
-		VALUES (?, ?, ?)
-	`, a.IDService, a.IDUtilisateur, a.RoleService)
+	_, err = tx.Exec(`INSERT INTO service_benevole (id_service, id_utilisateur, role_service) VALUES (?, ?, ?)`, a.IDService, a.IDUtilisateur, a.RoleService)
 
 	if err != nil {
 		http.Error(
@@ -205,11 +167,7 @@ func DeleteServiceBenevole(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err := config.DB.Exec(`
-		DELETE FROM service_benevole
-		WHERE id_service = ?
-		AND id_utilisateur = ?
-	`, a.IDService, a.IDUtilisateur)
+	_, err := config.DB.Exec(`DELETE FROM service_benevole WHERE id_service = ? AND id_utilisateur = ?`, a.IDService, a.IDUtilisateur)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

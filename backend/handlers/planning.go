@@ -1,4 +1,3 @@
-// API PLANNING — Données utilisées pour organiser le planning des bénévoles
 package handlers
 
 import (
@@ -11,25 +10,7 @@ import (
 )
 
 func ExportPlanning(w http.ResponseWriter, r *http.Request) {
-	rows, err := config.DB.Query(`
-		SELECT
-			c.date_collecte,
-			c.heure_debut,
-			c.heure_fin,
-			u.nom,
-			u.prenom,
-			cb.role_collecte,
-			c.adresse,
-			c.ville,
-			c.code_postal,
-			c.statut
-		FROM collecte c
-		INNER JOIN collecte_benevole cb
-			ON c.id_collecte = cb.id_collecte
-		INNER JOIN utilisateur u
-			ON cb.id_utilisateur = u.id_utilisateur
-		ORDER BY c.date_collecte, c.heure_debut, u.nom
-	`)
+	rows, err := config.DB.Query(`SELECT c.date_collecte, c.heure_debut, c.heure_fin, u.nom, u.prenom, cb.role_collecte, c.adresse, c.ville, c.code_postal, c.statut FROM collecte c INNER JOIN collecte_benevole cb ON c.id_collecte = cb.id_collecte INNER JOIN utilisateur u ON cb.id_utilisateur = u.id_utilisateur ORDER BY c.date_collecte, c.heure_debut, u.nom`)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

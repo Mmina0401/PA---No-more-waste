@@ -1,4 +1,3 @@
-// API ARCHIVAGE — Archivage et évolutions automatiques — Gestion des éléments anciens
 package handlers
 
 import (
@@ -9,52 +8,17 @@ import (
 )
 
 func ArchiverEvenementsPasses() {
-	_, err := config.DB.Exec(`
-		UPDATE service
-		SET statut = 'TERMINE'
-		WHERE date_service < CURDATE()
-		AND statut NOT IN ('TERMINE', 'ANNULE')
-	`)
+	_, err := config.DB.Exec(`UPDATE service SET statut = 'TERMINE' WHERE date_service < CURDATE() AND statut NOT IN ('TERMINE', 'ANNULE')`)
 	if err != nil {
 		log.Println("Erreur archivage services :", err)
 	}
 
-	// Ferme les offres bénévoles liées à un événement terminé
-	_, err = config.DB.Exec(`
-		UPDATE offre_benevole ob
-		SET ob.statut = 'FERMEE'
-		WHERE ob.statut = 'OUVERTE'
-		AND (
-			(
-				ob.type_evenement = 'COLLECTE'
-				AND EXISTS (
-					SELECT 1
-					FROM collecte c
-					WHERE c.id_collecte = ob.id_evenement
-					AND (
-						c.statut IN ('TERMINEE', 'ANNULEE')
-						OR c.date_collecte < CURDATE()
-					)
-				)
-			)
-			OR
-			(
-				ob.type_evenement = 'SERVICE'
-				AND EXISTS (
-					SELECT 1
-					FROM service s
-					WHERE s.id_service = ob.id_evenement
-					AND s.date_service < CURDATE()
-				)
-			)
-		)
-	`)
+	_, err = config.DB.Exec(`UPDATE offre_benevole ob SET ob.statut = 'FERMEE' WHERE ob.statut = 'OUVERTE' AND ( ( ob.type_evenement = 'COLLECTE' AND EXISTS ( SELECT 1 FROM collecte c WHERE c.id_collecte = ob.id_evenement AND ( c.statut IN ('TERMINEE', 'ANNULEE') OR c.date_collecte < CURDATE() ) ) ) OR ( ob.type_evenement = 'SERVICE' AND EXISTS ( SELECT 1 FROM service s WHERE s.id_service = ob.id_evenement AND s.date_service < CURDATE() ) ) )`)
 	if err != nil {
 		log.Println("Erreur archivage offres :", err)
 	}
 }
 
-// Lance l'archivage toutes les heures
 func LancerArchivageAutomatique() {
 	ArchiverEvenementsPasses()
 

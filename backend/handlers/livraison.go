@@ -1,4 +1,3 @@
-// API TOURNEES/LIVRAISONS — Redistribution aux associations — Sorties de stock
 package handlers
 
 import (
@@ -50,16 +49,7 @@ type Vehicule struct {
 func GetLivraisons(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	rows, err := config.DB.Query(`
-		SELECT
-			l.id_livraison, l.id_association, l.id_vehicule, l.date_livraison,
-			l.heure_depart, l.heure_retour, l.statut, l.commentaire,
-			a.nom, v.immatriculation
-		FROM livraison l
-		JOIN association_beneficiaire a ON a.id_association = l.id_association
-		JOIN vehicule v ON v.id_vehicule = l.id_vehicule
-		ORDER BY l.date_livraison DESC
-	`)
+	rows, err := config.DB.Query(`SELECT l.id_livraison, l.id_association, l.id_vehicule, l.date_livraison, l.heure_depart, l.heure_retour, l.statut, l.commentaire, a.nom, v.immatriculation FROM livraison l JOIN association_beneficiaire a ON a.id_association = l.id_association JOIN vehicule v ON v.id_vehicule = l.id_vehicule ORDER BY l.date_livraison DESC`)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -92,11 +82,7 @@ func GetLivraison(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var t Livraison
-	err := config.DB.QueryRow(`
-		SELECT id_livraison, id_association, id_vehicule, date_livraison,
-			   heure_depart, heure_retour, statut, commentaire
-		FROM livraison WHERE id_livraison = ?
-	`, id).Scan(
+	err := config.DB.QueryRow(`SELECT id_livraison, id_association, id_vehicule, date_livraison, heure_depart, heure_retour, statut, commentaire FROM livraison WHERE id_livraison = ?`, id).Scan(
 		&t.IDLivraison, &t.IDAssociation, &t.IDVehicule, &t.DateLivraison,
 		&t.HeureDepart, &t.HeureRetour, &t.Statut, &t.Commentaire,
 	)
@@ -127,10 +113,7 @@ func CreateLivraison(w http.ResponseWriter, r *http.Request) {
 		t.Statut = "PLANIFIEE"
 	}
 
-	result, err := config.DB.Exec(`
-		INSERT INTO livraison (id_association, id_vehicule, date_livraison, heure_depart, heure_retour, statut, commentaire)
-		VALUES (?,?,?,?,?,?,?)
-	`, t.IDAssociation, t.IDVehicule, t.DateLivraison, t.HeureDepart, t.HeureRetour, t.Statut, t.Commentaire)
+	result, err := config.DB.Exec(`INSERT INTO livraison (id_association, id_vehicule, date_livraison, heure_depart, heure_retour, statut, commentaire) VALUES (?,?,?,?,?,?,?)`, t.IDAssociation, t.IDVehicule, t.DateLivraison, t.HeureDepart, t.HeureRetour, t.Statut, t.Commentaire)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -167,12 +150,7 @@ func UpdateLivraison(w http.ResponseWriter, r *http.Request) {
 	defer tx.Rollback()
 
 	var statutActuel string
-	err = tx.QueryRow(`
-		SELECT statut
-		FROM livraison
-		WHERE id_livraison = ?
-		FOR UPDATE
-	`, t.IDLivraison).Scan(&statutActuel)
+	err = tx.QueryRow(`SELECT statut FROM livraison WHERE id_livraison = ? FOR UPDATE`, t.IDLivraison).Scan(&statutActuel)
 	if err == sql.ErrNoRows {
 		http.Error(w, "tournée introuvable", http.StatusNotFound)
 		return
@@ -182,8 +160,6 @@ func UpdateLivraison(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Une tournée terminée ne peut pas être rouverte
-
 	if statutActuel == "TERMINEE" && t.Statut != "TERMINEE" {
 		http.Error(w, "une tournée terminée ne peut pas être rouverte", http.StatusConflict)
 		return
@@ -191,7 +167,6 @@ func UpdateLivraison(w http.ResponseWriter, r *http.Request) {
 
 	stockDebite := false
 
-	// Retire le stock quand la tournée passe à TERMINEE
 	if statutActuel != "TERMINEE" && t.Statut == "TERMINEE" {
 		type ligneAControler struct {
 			IDProduit  int
@@ -199,12 +174,7 @@ func UpdateLivraison(w http.ResponseWriter, r *http.Request) {
 			NomProduit string
 		}
 
-		rows, err := tx.Query(`
-			SELECT dl.id_produit, dl.quantite, p.nom
-			FROM detail_livraison dl
-			JOIN produit p ON p.id_produit = dl.id_produit
-			WHERE dl.id_livraison = ?
-		`, t.IDLivraison)
+		rows, err := tx.Query(`SELECT dl.id_produit, dl.quantite, p.nom FROM detail_livraison dl JOIN produit p ON p.id_produit = dl.id_produit WHERE dl.id_livraison = ?`, t.IDLivraison)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -237,12 +207,7 @@ func UpdateLivraison(w http.ResponseWriter, r *http.Request) {
 			var idStock int
 			var quantiteDisponible float64
 
-			err = tx.QueryRow(`
-				SELECT id_stock, quantite
-				FROM stock
-				WHERE id_produit = ?
-				FOR UPDATE
-			`, ligne.IDProduit).Scan(&idStock, &quantiteDisponible)
+			err = tx.QueryRow(`SELECT id_stock, quantite FROM stock WHERE id_produit = ? FOR UPDATE`, ligne.IDProduit).Scan(&idStock, &quantiteDisponible)
 
 			if err == sql.ErrNoRows {
 				http.Error(
@@ -271,21 +236,13 @@ func UpdateLivraison(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			_, err = tx.Exec(`
-				UPDATE stock
-				SET quantite = quantite - ?
-				WHERE id_stock = ?
-			`, ligne.Quantite, idStock)
+			_, err = tx.Exec(`UPDATE stock SET quantite = quantite - ? WHERE id_stock = ?`, ligne.Quantite, idStock)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
 
-			_, err = tx.Exec(`
-				INSERT INTO mouvement_stock
-					(id_stock, id_utilisateur, type, quantite, motif)
-				VALUES (?, ?, 'SORTIE', ?, ?)
-			`,
+			_, err = tx.Exec(`INSERT INTO mouvement_stock (id_stock, id_utilisateur, type, quantite, motif) VALUES (?, ?, 'SORTIE', ?, ?)`,
 				idStock,
 				informations.IDUtilisateur,
 				ligne.Quantite,
@@ -300,11 +257,7 @@ func UpdateLivraison(w http.ResponseWriter, r *http.Request) {
 		stockDebite = true
 	}
 
-	_, err = tx.Exec(`
-		UPDATE livraison
-		SET id_association=?, id_vehicule=?, date_livraison=?, heure_depart=?, heure_retour=?, statut=?, commentaire=?
-		WHERE id_livraison=?
-	`, t.IDAssociation, t.IDVehicule, t.DateLivraison, t.HeureDepart, t.HeureRetour, t.Statut, t.Commentaire, t.IDLivraison)
+	_, err = tx.Exec(`UPDATE livraison SET id_association=?, id_vehicule=?, date_livraison=?, heure_depart=?, heure_retour=?, statut=?, commentaire=? WHERE id_livraison=?`, t.IDAssociation, t.IDVehicule, t.DateLivraison, t.HeureDepart, t.HeureRetour, t.Statut, t.Commentaire, t.IDLivraison)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -370,12 +323,7 @@ func GetLignesLivraison(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rows, err := config.DB.Query(`
-		SELECT dl.id_livraison, dl.id_produit, dl.quantite, p.nom
-		FROM detail_livraison dl
-		JOIN produit p ON p.id_produit = dl.id_produit
-		WHERE dl.id_livraison = ?
-	`, idLivraison)
+	rows, err := config.DB.Query(`SELECT dl.id_livraison, dl.id_produit, dl.quantite, p.nom FROM detail_livraison dl JOIN produit p ON p.id_produit = dl.id_produit WHERE dl.id_livraison = ?`, idLivraison)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -426,10 +374,7 @@ func AjouterLigneLivraison(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = config.DB.Exec(`
-		INSERT INTO detail_livraison (id_livraison, id_produit, quantite)
-		VALUES (?,?,?)
-	`, l.IDLivraison, l.IDProduit, l.Quantite)
+	_, err = config.DB.Exec(`INSERT INTO detail_livraison (id_livraison, id_produit, quantite) VALUES (?,?,?)`, l.IDLivraison, l.IDProduit, l.Quantite)
 
 	if err != nil {
 		http.Error(w, "ce produit est déjà dans cette tournée", http.StatusConflict)
@@ -466,9 +411,7 @@ func SupprimerLigneLivraison(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = config.DB.Exec(`
-		DELETE FROM detail_livraison WHERE id_livraison = ? AND id_produit = ?
-	`, l.IDLivraison, l.IDProduit)
+	_, err = config.DB.Exec(`DELETE FROM detail_livraison WHERE id_livraison = ? AND id_produit = ?`, l.IDLivraison, l.IDProduit)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

@@ -1,4 +1,3 @@
-// API PUBLIC — Traitement des formulaires accessibles sans connexion
 package handlers
 
 import (
@@ -24,28 +23,16 @@ type ServicePublic struct {
 	NbInscrits  int     `json:"nb_inscrits"`
 }
 
-// Crée ou récupère un visiteur pour une demande publique
-
 func trouverOuCreerVisiteur(nom, prenom, email string, raisonSociale, siret, secteurActivite *string) (int, error) {
 	var idUtilisateur int
 	var role string
 
-	err := config.DB.QueryRow(`
-		SELECT id_utilisateur, role
-		FROM utilisateur
-		WHERE email = ?
-	`, email).Scan(&idUtilisateur, &role)
+	err := config.DB.QueryRow(`SELECT id_utilisateur, role FROM utilisateur WHERE email = ?`, email).Scan(&idUtilisateur, &role)
 
 	if err == nil {
 
 		if (role == "COMMERCANT" || role == "VISITEUR") && (raisonSociale != nil || siret != nil) {
-			_, _ = config.DB.Exec(`
-				UPDATE utilisateur
-				SET raison_sociale = COALESCE(?, raison_sociale),
-					siret = COALESCE(?, siret),
-					secteur_activite = COALESCE(?, secteur_activite)
-				WHERE id_utilisateur = ?
-			`, raisonSociale, siret, secteurActivite, idUtilisateur)
+			_, _ = config.DB.Exec(`UPDATE utilisateur SET raison_sociale = COALESCE(?, raison_sociale), siret = COALESCE(?, siret), secteur_activite = COALESCE(?, secteur_activite) WHERE id_utilisateur = ?`, raisonSociale, siret, secteurActivite, idUtilisateur)
 		}
 		return idUtilisateur, nil
 	}
@@ -54,20 +41,13 @@ func trouverOuCreerVisiteur(nom, prenom, email string, raisonSociale, siret, sec
 		return 0, err
 	}
 
-	// Crée un compte visiteur technique
 	motDePasseTechnique := "visiteur-" + email
 	hash, errHash := bcrypt.GenerateFromPassword([]byte(motDePasseTechnique), bcrypt.DefaultCost)
 	if errHash != nil {
 		return 0, errHash
 	}
 
-	resultat, errCreation := config.DB.Exec(`
-		INSERT INTO utilisateur (
-			nom, prenom, email, mot_de_passe, role,
-			raison_sociale, siret, secteur_activite
-		)
-		VALUES (?, ?, ?, ?, 'VISITEUR', ?, ?, ?)
-	`, nom, prenom, email, string(hash), raisonSociale, siret, secteurActivite)
+	resultat, errCreation := config.DB.Exec(`INSERT INTO utilisateur ( nom, prenom, email, mot_de_passe, role, raison_sociale, siret, secteur_activite ) VALUES (?, ?, ?, ?, 'VISITEUR', ?, ?, ?)`, nom, prenom, email, string(hash), raisonSociale, siret, secteurActivite)
 	if errCreation != nil {
 		return 0, errCreation
 	}
@@ -79,21 +59,7 @@ func trouverOuCreerVisiteur(nom, prenom, email string, raisonSociale, siret, sec
 func ObtenirServicesPublics(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	lignes, err := config.DB.Query(`
-		SELECT
-			s.id_service, s.nom, s.description, s.lieu, s.date_service,
-			s.heure_debut, s.heure_fin, s.capacite_max,
-			COUNT(CASE WHEN u.role = 'COMMERCANT' THEN 1 END) AS nb_inscrits
-		FROM service s
-		LEFT JOIN inscription_service i
-			ON i.id_service = s.id_service
-			AND i.statut != 'ANNULE'
-		LEFT JOIN utilisateur u
-			ON u.id_utilisateur = i.id_utilisateur
-		WHERE s.statut = 'OUVERT'
-		GROUP BY s.id_service
-		ORDER BY s.date_service ASC
-	`)
+	lignes, err := config.DB.Query(`SELECT s.id_service, s.nom, s.description, s.lieu, s.date_service, s.heure_debut, s.heure_fin, s.capacite_max, COUNT(CASE WHEN u.role = 'COMMERCANT' THEN 1 END) AS nb_inscrits FROM service s LEFT JOIN inscription_service i ON i.id_service = s.id_service AND i.statut != 'ANNULE' LEFT JOIN utilisateur u ON u.id_utilisateur = i.id_utilisateur WHERE s.statut = 'OUVERT' GROUP BY s.id_service ORDER BY s.date_service ASC`)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -115,8 +81,6 @@ func ObtenirServicesPublics(w http.ResponseWriter, r *http.Request) {
 
 	json.NewEncoder(w).Encode(services)
 }
-
-// Crée une demande de compte commerçant
 
 func DemanderAdhesionCommercant(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
@@ -169,11 +133,7 @@ func DemanderAdhesionCommercant(w http.ResponseWriter, r *http.Request) {
 
 	var idExistant int
 	var roleExistant string
-	err = config.DB.QueryRow(`
-		SELECT id_utilisateur, role
-		FROM utilisateur
-		WHERE email = ?
-	`, demande.Email).Scan(&idExistant, &roleExistant)
+	err = config.DB.QueryRow(`SELECT id_utilisateur, role FROM utilisateur WHERE email = ?`, demande.Email).Scan(&idExistant, &roleExistant)
 
 	if err == nil {
 		if roleExistant != "VISITEUR" {
@@ -181,16 +141,7 @@ func DemanderAdhesionCommercant(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// Garde le même compte si l'utilisateur était déjà visiteur
-
-		_, err = config.DB.Exec(`
-			UPDATE utilisateur
-			SET nom = ?, prenom = ?, mot_de_passe = ?, telephone = ?,
-				adresse = ?, ville = ?, code_postal = ?,
-				role = 'COMMERCANT', actif = FALSE, statut_compte = 'EN_ATTENTE',
-				raison_sociale = ?, siret = ?, secteur_activite = ?
-			WHERE id_utilisateur = ?
-		`, demande.Nom, demande.Prenom, string(hash), demande.Telephone,
+		_, err = config.DB.Exec(`UPDATE utilisateur SET nom = ?, prenom = ?, mot_de_passe = ?, telephone = ?, adresse = ?, ville = ?, code_postal = ?, role = 'COMMERCANT', actif = FALSE, statut_compte = 'EN_ATTENTE', raison_sociale = ?, siret = ?, secteur_activite = ? WHERE id_utilisateur = ?`, demande.Nom, demande.Prenom, string(hash), demande.Telephone,
 			demande.Adresse, demande.Ville, demande.CodePostal,
 			demande.RaisonSociale, demande.Siret, demande.SecteurActivite,
 			idExistant)
@@ -199,13 +150,7 @@ func DemanderAdhesionCommercant(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else if err == sql.ErrNoRows {
-		_, err = config.DB.Exec(`
-			INSERT INTO utilisateur (
-				nom, prenom, email, mot_de_passe, telephone, adresse, ville, code_postal,
-				role, actif, statut_compte, raison_sociale, siret, secteur_activite
-			)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'COMMERCANT', FALSE, 'EN_ATTENTE', ?, ?, ?)
-		`, demande.Nom, demande.Prenom, demande.Email, string(hash), demande.Telephone,
+		_, err = config.DB.Exec(`INSERT INTO utilisateur ( nom, prenom, email, mot_de_passe, telephone, adresse, ville, code_postal, role, actif, statut_compte, raison_sociale, siret, secteur_activite ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'COMMERCANT', FALSE, 'EN_ATTENTE', ?, ?, ?)`, demande.Nom, demande.Prenom, demande.Email, string(hash), demande.Telephone,
 			demande.Adresse, demande.Ville, demande.CodePostal,
 			demande.RaisonSociale, demande.Siret, demande.SecteurActivite)
 		if err != nil {
@@ -221,8 +166,6 @@ func DemanderAdhesionCommercant(w http.ResponseWriter, r *http.Request) {
 		"message": "Demande d'adhésion enregistrée. Un administrateur doit maintenant valider votre compte et votre adhésion.",
 	})
 }
-
-// Enregistre une demande de collecte publique
 
 func DemanderCollectePublique(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
@@ -269,13 +212,7 @@ func DemanderCollectePublique(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = config.DB.Exec(`
-		INSERT INTO collecte (
-			id_utilisateur, date_collecte, heure_debut, heure_fin,
-			adresse, ville, code_postal, commentaire, statut
-		)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'EN_ATTENTE')
-	`, idUtilisateur, demande.DateCollecte, demande.HeureDebut, demande.HeureFin,
+	_, err = config.DB.Exec(`INSERT INTO collecte ( id_utilisateur, date_collecte, heure_debut, heure_fin, adresse, ville, code_postal, commentaire, statut ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'EN_ATTENTE')`, idUtilisateur, demande.DateCollecte, demande.HeureDebut, demande.HeureFin,
 		demande.Adresse, demande.Ville, demande.CodePostal, demande.Commentaire)
 	if err != nil {
 		http.Error(w, "impossible d'enregistrer la demande", http.StatusInternalServerError)
@@ -287,7 +224,6 @@ func DemanderCollectePublique(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// Retourne la liste des compétences disponibles pour la candidature publique.
 func GetCompetencesPubliques(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -296,11 +232,7 @@ func GetCompetencesPubliques(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rows, err := config.DB.Query(`
-		SELECT id_competence, nom
-		FROM competence
-		ORDER BY nom
-	`)
+	rows, err := config.DB.Query(`SELECT id_competence, nom FROM competence ORDER BY nom`)
 	if err != nil {
 		http.Error(w, "impossible de récupérer les compétences", http.StatusInternalServerError)
 		return
@@ -333,7 +265,6 @@ func GetCompetencesPubliques(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(competences)
 }
 
-// Crée une candidature bénévole.
 func CandidaterBenevole(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -369,11 +300,7 @@ func CandidaterBenevole(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var idExistant int
-	err := config.DB.QueryRow(`
-		SELECT id_utilisateur
-		FROM utilisateur
-		WHERE email = ?
-	`, candidature.Email).Scan(&idExistant)
+	err := config.DB.QueryRow(`SELECT id_utilisateur FROM utilisateur WHERE email = ?`, candidature.Email).Scan(&idExistant)
 
 	if err == nil {
 		http.Error(w, "un compte existe déjà avec cet email", http.StatusConflict)
@@ -400,19 +327,7 @@ func CandidaterBenevole(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resultat, err := tx.Exec(`
-		INSERT INTO utilisateur (
-			nom,
-			prenom,
-			email,
-			mot_de_passe,
-			telephone,
-			ville,
-			role,
-			actif
-		)
-		VALUES (?, ?, ?, ?, ?, ?, 'BENEVOLE', FALSE)
-	`,
+	resultat, err := tx.Exec(`INSERT INTO utilisateur ( nom, prenom, email, mot_de_passe, telephone, ville, role, actif ) VALUES (?, ?, ?, ?, ?, ?, 'BENEVOLE', FALSE)`,
 		candidature.Nom,
 		candidature.Prenom,
 		candidature.Email,
@@ -442,11 +357,7 @@ func CandidaterBenevole(w http.ResponseWriter, r *http.Request) {
 		}
 
 		var existe int
-		err := tx.QueryRow(`
-			SELECT COUNT(*)
-			FROM competence
-			WHERE id_competence = ?
-		`, idCompetence).Scan(&existe)
+		err := tx.QueryRow(`SELECT COUNT(*) FROM competence WHERE id_competence = ?`, idCompetence).Scan(&existe)
 
 		if err != nil {
 			tx.Rollback()
@@ -460,13 +371,7 @@ func CandidaterBenevole(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		_, err = tx.Exec(`
-			INSERT INTO benevole_competence (
-				id_utilisateur,
-				id_competence
-			)
-			VALUES (?, ?)
-		`, idUtilisateur, idCompetence)
+		_, err = tx.Exec(`INSERT INTO benevole_competence ( id_utilisateur, id_competence ) VALUES (?, ?)`, idUtilisateur, idCompetence)
 
 		if err != nil {
 			tx.Rollback()

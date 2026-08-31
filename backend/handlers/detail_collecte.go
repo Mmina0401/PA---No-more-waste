@@ -1,4 +1,3 @@
-// API PRODUITS COLLECTES — Produits réellement récupérés — Ajout au stock après collecte
 package handlers
 
 import (
@@ -26,18 +25,7 @@ func repondreErreurDetailCollecte(w http.ResponseWriter, statut int, message str
 func GetDetailCollectes(w http.ResponseWriter, r *http.Request) {
 	details := []models.DetailCollecte{}
 
-	requete := `
-		SELECT
-			dc.id_collecte,
-			dc.id_produit,
-			p.nom,
-			dc.quantite,
-			DATE_FORMAT(dc.date_dlc, '%Y-%m-%d'),
-			dc.etat,
-			COALESCE(dc.observation, '')
-		FROM detail_collecte dc
-		JOIN produit p ON p.id_produit = dc.id_produit
-	`
+	requete := `SELECT dc.id_collecte, dc.id_produit, p.nom, dc.quantite, DATE_FORMAT(dc.date_dlc, '%Y-%m-%d'), dc.etat, COALESCE(dc.observation, '') FROM detail_collecte dc JOIN produit p ON p.id_produit = dc.id_produit`
 
 	arguments := []interface{}{}
 
@@ -146,12 +134,7 @@ func CreateDetailCollecte(w http.ResponseWriter, r *http.Request) {
 	defer tx.Rollback()
 
 	var statutCollecte string
-	if err := tx.QueryRowContext(r.Context(), `
-		SELECT statut
-		FROM collecte
-		WHERE id_collecte = ?
-		FOR UPDATE
-	`, d.IDCollecte).Scan(&statutCollecte); err != nil {
+	if err := tx.QueryRowContext(r.Context(), `SELECT statut FROM collecte WHERE id_collecte = ? FOR UPDATE`, d.IDCollecte).Scan(&statutCollecte); err != nil {
 		if err == sql.ErrNoRows {
 			repondreErreurDetailCollecte(w, http.StatusNotFound, "Collecte introuvable.")
 			return
@@ -166,11 +149,7 @@ func CreateDetailCollecte(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var nomProduit string
-	if err := tx.QueryRowContext(r.Context(), `
-		SELECT nom
-		FROM produit
-		WHERE id_produit = ? AND actif = TRUE
-	`, d.IDProduit).Scan(&nomProduit); err != nil {
+	if err := tx.QueryRowContext(r.Context(), `SELECT nom FROM produit WHERE id_produit = ? AND actif = TRUE`, d.IDProduit).Scan(&nomProduit); err != nil {
 		if err == sql.ErrNoRows {
 			repondreErreurDetailCollecte(w, http.StatusNotFound, "Produit introuvable ou inactif.")
 			return
@@ -180,11 +159,7 @@ func CreateDetailCollecte(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var detailExistant int
-	if err := tx.QueryRowContext(r.Context(), `
-		SELECT COUNT(*)
-		FROM detail_collecte
-		WHERE id_collecte = ? AND id_produit = ? AND date_dlc = ?
-	`, d.IDCollecte, d.IDProduit, d.DateDLC).Scan(&detailExistant); err != nil {
+	if err := tx.QueryRowContext(r.Context(), `SELECT COUNT(*) FROM detail_collecte WHERE id_collecte = ? AND id_produit = ? AND date_dlc = ?`, d.IDCollecte, d.IDProduit, d.DateDLC).Scan(&detailExistant); err != nil {
 		repondreErreurDetailCollecte(w, http.StatusInternalServerError, "Impossible de vérifier le détail de collecte.")
 		return
 	}
@@ -194,17 +169,7 @@ func CreateDetailCollecte(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, err := tx.ExecContext(r.Context(), `
-		INSERT INTO detail_collecte (
-			id_collecte,
-			id_produit,
-			quantite,
-			date_dlc,
-			etat,
-			observation
-		)
-		VALUES (?, ?, ?, ?, ?, ?)
-	`,
+	if _, err := tx.ExecContext(r.Context(), `INSERT INTO detail_collecte ( id_collecte, id_produit, quantite, date_dlc, etat, observation ) VALUES (?, ?, ?, ?, ?, ?)`,
 		d.IDCollecte,
 		d.IDProduit,
 		d.Quantite,
@@ -219,20 +184,11 @@ func CreateDetailCollecte(w http.ResponseWriter, r *http.Request) {
 	var idStock int
 	var emplacementStock string
 
-	err = tx.QueryRowContext(r.Context(), `
-		SELECT id_stock, emplacement
-		FROM stock
-		WHERE id_produit = ?
-		FOR UPDATE
-	`, d.IDProduit).Scan(&idStock, &emplacementStock)
+	err = tx.QueryRowContext(r.Context(), `SELECT id_stock, emplacement FROM stock WHERE id_produit = ? FOR UPDATE`, d.IDProduit).Scan(&idStock, &emplacementStock)
 
 	switch {
 	case err == nil:
-		if _, err := tx.ExecContext(r.Context(), `
-			UPDATE stock
-			SET quantite = quantite + ?
-			WHERE id_stock = ?
-		`, d.Quantite, idStock); err != nil {
+		if _, err := tx.ExecContext(r.Context(), `UPDATE stock SET quantite = quantite + ? WHERE id_stock = ?`, d.Quantite, idStock); err != nil {
 			repondreErreurDetailCollecte(w, http.StatusInternalServerError, "Impossible de mettre à jour le stock.")
 			return
 		}
@@ -243,10 +199,7 @@ func CreateDetailCollecte(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		resultat, err := tx.ExecContext(r.Context(), `
-			INSERT INTO stock (id_produit, quantite, emplacement)
-			VALUES (?, ?, ?)
-		`, d.IDProduit, d.Quantite, d.Emplacement)
+		resultat, err := tx.ExecContext(r.Context(), `INSERT INTO stock (id_produit, quantite, emplacement) VALUES (?, ?, ?)`, d.IDProduit, d.Quantite, d.Emplacement)
 		if err != nil {
 			repondreErreurDetailCollecte(w, http.StatusInternalServerError, "Impossible de créer le stock du produit.")
 			return
@@ -267,26 +220,13 @@ func CreateDetailCollecte(w http.ResponseWriter, r *http.Request) {
 	}
 
 	motif := fmt.Sprintf("Entrée automatique - collecte #%d", d.IDCollecte)
-	if _, err := tx.ExecContext(r.Context(), `
-		INSERT INTO mouvement_stock (
-			id_stock,
-			id_utilisateur,
-			type,
-			quantite,
-			motif
-		)
-		VALUES (?, ?, 'ENTREE', ?, ?)
-	`, idStock, informations.IDUtilisateur, d.Quantite, motif); err != nil {
+	if _, err := tx.ExecContext(r.Context(), `INSERT INTO mouvement_stock ( id_stock, id_utilisateur, type, quantite, motif ) VALUES (?, ?, 'ENTREE', ?, ?)`, idStock, informations.IDUtilisateur, d.Quantite, motif); err != nil {
 		repondreErreurDetailCollecte(w, http.StatusInternalServerError, "Impossible de créer le mouvement de stock.")
 		return
 	}
 
 	var nouvelleQuantite float64
-	if err := tx.QueryRowContext(r.Context(), `
-		SELECT quantite
-		FROM stock
-		WHERE id_stock = ?
-	`, idStock).Scan(&nouvelleQuantite); err != nil {
+	if err := tx.QueryRowContext(r.Context(), `SELECT quantite FROM stock WHERE id_stock = ?`, idStock).Scan(&nouvelleQuantite); err != nil {
 		repondreErreurDetailCollecte(w, http.StatusInternalServerError, "Impossible de vérifier la nouvelle quantité en stock.")
 		return
 	}
@@ -322,17 +262,7 @@ func UpdateDetailCollecte(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = config.DB.Exec(`
-		UPDATE detail_collecte
-		SET
-			quantite = ?,
-			date_dlc = ?,
-			etat = ?,
-			observation = ?
-		WHERE
-			id_collecte = ?
-			AND id_produit = ?
-	`,
+	_, err = config.DB.Exec(`UPDATE detail_collecte SET quantite = ?, date_dlc = ?, etat = ?, observation = ? WHERE id_collecte = ? AND id_produit = ?`,
 		d.Quantite,
 		d.DateDLC,
 		d.Etat,
@@ -365,12 +295,7 @@ func DeleteDetailCollecte(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = config.DB.Exec(`
-		DELETE FROM detail_collecte
-		WHERE
-			id_collecte = ?
-			AND id_produit = ?
-	`,
+	_, err = config.DB.Exec(`DELETE FROM detail_collecte WHERE id_collecte = ? AND id_produit = ?`,
 		d.IDCollecte,
 		d.IDProduit,
 	)

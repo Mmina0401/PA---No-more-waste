@@ -41,29 +41,7 @@ func GenererPDFLivraison(w http.ResponseWriter, r *http.Request) {
 		modele          string
 	)
 
-	err = config.DB.QueryRow(`
-		SELECT
-			DATE_FORMAT(l.date_livraison, '%d/%m/%Y'),
-			l.heure_depart,
-			l.heure_retour,
-			l.statut,
-			l.commentaire,
-			a.nom,
-			a.adresse,
-			a.ville,
-			a.code_postal,
-			a.telephone,
-			a.email,
-			v.immatriculation,
-			v.marque,
-			v.modele
-		FROM livraison l
-		INNER JOIN association_beneficiaire a
-			ON a.id_association = l.id_association
-		INNER JOIN vehicule v
-			ON v.id_vehicule = l.id_vehicule
-		WHERE l.id_livraison = ?
-	`, idLivraison).Scan(
+	err = config.DB.QueryRow(`SELECT DATE_FORMAT(l.date_livraison, '%d/%m/%Y'), l.heure_depart, l.heure_retour, l.statut, l.commentaire, a.nom, a.adresse, a.ville, a.code_postal, a.telephone, a.email, v.immatriculation, v.marque, v.modele FROM livraison l INNER JOIN association_beneficiaire a ON a.id_association = l.id_association INNER JOIN vehicule v ON v.id_vehicule = l.id_vehicule WHERE l.id_livraison = ?`, idLivraison).Scan(
 		&dateLivraison,
 		&heureDepart,
 		&heureRetour,
@@ -90,18 +68,7 @@ func GenererPDFLivraison(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	lignes, err := config.DB.Query(`
-		SELECT
-			p.nom,
-			p.code_barre,
-			p.unite,
-			dl.quantite
-		FROM detail_livraison dl
-		INNER JOIN produit p
-			ON p.id_produit = dl.id_produit
-		WHERE dl.id_livraison = ?
-		ORDER BY p.nom
-	`, idLivraison)
+	lignes, err := config.DB.Query(`SELECT p.nom, p.code_barre, p.unite, dl.quantite FROM detail_livraison dl INNER JOIN produit p ON p.id_produit = dl.id_produit WHERE dl.id_livraison = ? ORDER BY p.nom`, idLivraison)
 
 	if err != nil {
 		http.Error(w, "erreur lors de la lecture des produits", http.StatusInternalServerError)
@@ -114,7 +81,6 @@ func GenererPDFLivraison(w http.ResponseWriter, r *http.Request) {
 	pdf.SetAutoPageBreak(true, 18)
 	pdf.AddPage()
 
-	// Gère les caractères français
 	traduit := pdf.UnicodeTranslatorFromDescriptor("")
 
 	pdf.SetFillColor(34, 125, 52)
