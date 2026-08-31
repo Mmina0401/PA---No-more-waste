@@ -177,102 +177,102 @@ INSERT INTO service
 (nom, description, lieu, date_service, heure_debut, heure_fin, capacite_max, statut)
 SELECT 'Atelier cuisine anti-gaspi','Préparation de recettes avec des invendus','Nantes',DATE_ADD(CURDATE(),INTERVAL 5 DAY),'09:00','12:00',20,'OUVERT'
 WHERE NOT EXISTS (
-    SELECT 1 FROM service WHERE nom='Atelier cuisine anti-gaspi' AND date_service >= CURDATE()
+SELECT 1 FROM service WHERE nom='Atelier cuisine anti-gaspi' AND date_service >= CURDATE()
 );
 
 INSERT INTO service
 (nom, description, lieu, date_service, heure_debut, heure_fin, capacite_max, statut)
 SELECT 'Atelier réparation vélo','Réparation et entretien de vélos','Paris',DATE_ADD(CURDATE(),INTERVAL 8 DAY),'14:00','17:00',15,'OUVERT'
 WHERE NOT EXISTS (
-    SELECT 1 FROM service WHERE nom='Atelier réparation vélo' AND date_service >= CURDATE()
+SELECT 1 FROM service WHERE nom='Atelier réparation vélo' AND date_service >= CURDATE()
 );
 
 INSERT INTO service
 (nom, description, lieu, date_service, heure_debut, heure_fin, capacite_max, statut)
 SELECT 'Atelier couture','Réparer et prolonger la durée de vie des vêtements','Marseille',DATE_ADD(CURDATE(),INTERVAL 11 DAY),'14:00','16:30',12,'OUVERT'
 WHERE NOT EXISTS (
-    SELECT 1 FROM service WHERE nom='Atelier couture' AND date_service >= CURDATE()
+SELECT 1 FROM service WHERE nom='Atelier couture' AND date_service >= CURDATE()
 );
 
 INSERT INTO service
 (nom, description, lieu, date_service, heure_debut, heure_fin, capacite_max, statut)
 SELECT 'Initiation bricolage','Découverte des réparations simples du quotidien','Limoges',DATE_ADD(CURDATE(),INTERVAL 14 DAY),'10:00','12:30',14,'OUVERT'
 WHERE NOT EXISTS (
-    SELECT 1 FROM service WHERE nom='Initiation bricolage' AND date_service >= CURDATE()
+SELECT 1 FROM service WHERE nom='Initiation bricolage' AND date_service >= CURDATE()
 );
 
 INSERT INTO service
 (nom, description, lieu, date_service, heure_debut, heure_fin, capacite_max, statut)
 SELECT 'Cuisine zéro déchet','Apprendre à cuisiner sans gaspiller','Paris',DATE_ADD(CURDATE(),INTERVAL 17 DAY),'18:00','20:30',18,'OUVERT'
 WHERE NOT EXISTS (
-    SELECT 1 FROM service WHERE nom='Cuisine zéro déchet' AND date_service >= CURDATE()
+SELECT 1 FROM service WHERE nom='Cuisine zéro déchet' AND date_service >= CURDATE()
 );
 
 INSERT INTO service
 (nom, description, lieu, date_service, heure_debut, heure_fin, capacite_max, statut)
 SELECT 'Conservation des aliments','Conseils pour mieux conserver les produits frais','Nantes',DATE_ADD(CURDATE(),INTERVAL 20 DAY),'10:00','12:00',25,'OUVERT'
 WHERE NOT EXISTS (
-    SELECT 1 FROM service WHERE nom='Conservation des aliments' AND date_service >= CURDATE()
+SELECT 1 FROM service WHERE nom='Conservation des aliments' AND date_service >= CURDATE()
 );
 
 INSERT INTO service
 (nom, description, lieu, date_service, heure_debut, heure_fin, capacite_max, statut)
 SELECT 'Réparation petit électroménager','Atelier de diagnostic et réparation','Marseille',DATE_ADD(CURDATE(),INTERVAL 23 DAY),'13:30','17:00',10,'OUVERT'
 WHERE NOT EXISTS (
-    SELECT 1 FROM service WHERE nom='Réparation petit électroménager' AND date_service >= CURDATE()
+SELECT 1 FROM service WHERE nom='Réparation petit électroménager' AND date_service >= CURDATE()
 );
 
 INSERT INTO service
 (nom, description, lieu, date_service, heure_debut, heure_fin, capacite_max, statut)
 SELECT 'Sensibilisation anti-gaspillage','Présentation des bonnes pratiques anti-gaspillage','Limoges',DATE_ADD(CURDATE(),INTERVAL 27 DAY),'09:30','11:30',30,'OUVERT'
 WHERE NOT EXISTS (
-    SELECT 1 FROM service WHERE nom='Sensibilisation anti-gaspillage' AND date_service >= CURDATE()
+SELECT 1 FROM service WHERE nom='Sensibilisation anti-gaspillage' AND date_service >= CURDATE()
 );
 
 INSERT INTO association_beneficiaire
 (nom, adresse, ville, code_postal, telephone, email, responsable)
 SELECT 'Les Paniers Solidaires','12 rue des Lilas','Paris','75012','0142001100','contact@paniers-solidaires.fr','Mme Robert'
 WHERE NOT EXISTS (
-    SELECT 1 FROM association_beneficiaire WHERE email='contact@paniers-solidaires.fr'
+SELECT 1 FROM association_beneficiaire WHERE email='contact@paniers-solidaires.fr'
 );
 
 INSERT INTO association_beneficiaire
 (nom, adresse, ville, code_postal, telephone, email, responsable)
 SELECT 'Main Tendue Marseille','31 boulevard National','Marseille','13001','0491002200','contact@maintendue-marseille.fr','M. Lopez'
 WHERE NOT EXISTS (
-    SELECT 1 FROM association_beneficiaire WHERE email='contact@maintendue-marseille.fr'
+SELECT 1 FROM association_beneficiaire WHERE email='contact@maintendue-marseille.fr'
 );
 
 INSERT INTO association_beneficiaire
 (nom, adresse, ville, code_postal, telephone, email, responsable)
 SELECT 'Solidarité 87','6 avenue Garibaldi','Limoges','87000','0555003300','contact@solidarite87.fr','Mme Morel'
 WHERE NOT EXISTS (
-    SELECT 1 FROM association_beneficiaire WHERE email='contact@solidarite87.fr'
+SELECT 1 FROM association_beneficiaire WHERE email='contact@solidarite87.fr'
 );
 
 INSERT INTO association_beneficiaire
 (nom, adresse, ville, code_postal, telephone, email, responsable)
 SELECT 'Entraide Atlantique','45 rue de Strasbourg','Nantes','44000','0240004400','contact@entraide-atlantique.fr','M. Lefèvre'
 WHERE NOT EXISTS (
-    SELECT 1 FROM association_beneficiaire WHERE email='contact@entraide-atlantique.fr'
+SELECT 1 FROM association_beneficiaire WHERE email='contact@entraide-atlantique.fr'
 );
 
 INSERT INTO vehicule (immatriculation, marque, modele, capacite)
 SELECT 'FF-111-FF','Renault','Trafic',1200
 WHERE NOT EXISTS (
-    SELECT 1 FROM vehicule WHERE immatriculation='FF-111-FF'
+SELECT 1 FROM vehicule WHERE immatriculation='FF-111-FF'
 );
 
 INSERT INTO vehicule (immatriculation, marque, modele, capacite)
 SELECT 'GG-222-GG','Peugeot','Expert',1100
 WHERE NOT EXISTS (
-    SELECT 1 FROM vehicule WHERE immatriculation='GG-222-GG'
+SELECT 1 FROM vehicule WHERE immatriculation='GG-222-GG'
 );
 
 INSERT INTO vehicule (immatriculation, marque, modele, capacite)
 SELECT 'HH-333-HH','Citroën','Jumpy',1150
 WHERE NOT EXISTS (
-    SELECT 1 FROM vehicule WHERE immatriculation='HH-333-HH'
+SELECT 1 FROM vehicule WHERE immatriculation='HH-333-HH'
 );
 
 INSERT INTO stock (id_produit, quantite, emplacement)
@@ -280,5 +280,5 @@ SELECT p.id_produit, 25, CONCAT('DEMO-', p.id_produit)
 FROM produit p
 WHERE p.code_barre BETWEEN '376000001001' AND '376000001020'
 AND NOT EXISTS (
-    SELECT 1 FROM stock s WHERE s.id_produit = p.id_produit
+SELECT 1 FROM stock s WHERE s.id_produit = p.id_produit
 );
